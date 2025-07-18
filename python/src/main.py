@@ -41,7 +41,7 @@ def classify_workitem(work_item):
         ```json
         {
             "classification": "Bug"  # or "Story", "Feature", "Uncertain"
-            "explanation": "Brief explanation of your classification decision."
+            "explanation": "Brief explanation of your classification decision.",
             "priority": "Optional priority level for the work item, e.g., 'High', 'Medium', 'Low'.
             "resolution": "Optional resolution steps or suggestions if applicable. For example, 'Investigate the issue in the login module and fix the null pointer exception.'"
             "questions": "Optional questions for clarification if unable to provide resolution steps. For example, 'Could you provide more details about the error message encountered?'"
