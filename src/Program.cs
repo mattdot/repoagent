@@ -258,7 +258,28 @@ public class IssueProcessingAgent
             
             // Post the comment to GitHub
             await context.GitHub.Issue.Comment.Create(owner, repo, context.IssueNumber, context.GeneratedComment);
-            
+
+            //  // Add labels based on analysis to the GitHub issue
+            // await context.GitHub.Issue.Labels.AddToIssue(owner, repo, context.IssueNumber, new[] { context.Analysis.Type });
+            // Add labels based on analysis to the GitHub issue
+            try
+            {
+                var label = context.Analysis.Type;
+
+                // Validate label format
+                if (string.IsNullOrWhiteSpace(label) || label.Length > 50 || label.Contains(" "))
+                {
+                    throw new ArgumentException("Invalid label format");
+                }
+
+                await context.GitHub.Issue.Labels.AddToIssue(owner, repo, context.IssueNumber, new[] { label });
+                context.Logger.LogInformation($"Label '{label}' added successfully to {context.Repository}#{context.IssueNumber}");
+            }
+            catch (Exception ex)
+            {
+                context.Logger.LogWarning(ex, "Failed to add label to the issue");
+            }
+
             context.Logger.LogInformation($"Comment posted successfully to {context.Repository}#{context.IssueNumber}");
         }
         finally
