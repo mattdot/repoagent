@@ -1,0 +1,50 @@
+name: 'Python Action'
+description: 'A Python-based action for AI Workflow Agent'
+author: 'Swetha Anand'
+
+inputs:
+  issue_content:
+    description: 'The content of the GitHub issue to process'
+    required: true
+  github_token:
+    description: 'GitHub token for API access'
+    required: true
+  repository:
+    description: 'Repository in the format owner/repo'
+    required: true
+  issue_number:
+    description: 'Issue number to comment on'
+    required: true
+  azure_openai_api_type:
+    description: 'Azure OpenAI API type (default: azure)'
+    required: false
+    default: 'azure'
+  azure_openai_key:
+    description: 'Azure OpenAI API key'
+    required: false
+  azure_openai_endpoint:
+    description: 'Azure OpenAI API endpoint'
+    required: false
+  azure_openai_api_version:
+    description: 'Azure OpenAI API version'
+    required: false
+    default: '2024-02-15-preview'
+  azure_openai_deployment:
+    description: 'Azure OpenAI deployment name'
+    required: false
+    default: 'gpt-35-turbo'
+outputs:
+  result:
+    description: 'Result of the operation'
+  status:
+    description: 'Status of the operation'
+
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+
+
+
+branding:
+  icon: 'shield'
+  color: 'blue'

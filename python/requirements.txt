@@ -1,0 +1,5 @@
+# Add Python dependencies here
+# semantic-kernel>=0.9.0
+PyGithub>=2.0.0
+openai==0.28.0
+requests
