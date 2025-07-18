@@ -40,10 +40,10 @@ def classify_workitem(work_item):
         Provide your classification in the following format:
         ```json
         {
-            "classification": "Bug",  // Possible values: "Story", "Feature", "Uncertain"
+            "classification": "classification type. For example: "Bug", "Story", "Feature", "Uncertain"
             "explanation": "Brief explanation of your classification decision.",
             "priority": "Optional priority level for the work item, e.g., 'High', 'Medium', 'Low'.",
-            "resolution": "Optional resolution steps or suggestions if applicable. For example, 'Investigate the issue in the login module and fix the null pointer exception.'"
+            "resolution": "Optional resolution steps or suggestions if applicable. For example, 'Investigate the issue in the login module and fix the null pointer exception.'",
             "questions": "Optional questions for clarification if unable to provide resolution steps. For example, 'Could you provide more details about the error message encountered?'"
         }
         ```
