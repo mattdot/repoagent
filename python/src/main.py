@@ -123,13 +123,13 @@ class IssueProcessingAgent:
             comment += f"- **Priority**: {parsed_result['priority']}\n"
         comment += "\n## Next Steps\n\n"
 
-        if parsed_result['classification'] == "bug":
+        if parsed_result['classification'].lower() == "bug":
             comment += "This appears to be a bug report. The development team will:\n"
             comment += "1. Review the issue details\n"
             comment += "2. Reproduce the issue if possible\n"
             comment += "3. Investigate the root cause\n"
             comment += "4. Provide a fix or workaround\n"
-        elif parsed_result['classification'] == "feature":
+        elif parsed_result['classification'].lower() == "feature":
             comment += "This appears to be a feature request. The team will:\n"
             comment += "1. Evaluate the request against project goals\n"
             comment += "2. Assess implementation complexity\n"
