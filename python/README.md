@@ -1,4 +1,4 @@
-# Python AI Workflow Agent
+# Python TPM Agent
 
 This repository contains a Python-based implementation of the AI Workflow Agent. The agent is designed to process GitHub issues using a structured workflow, including analyzing issue content, generating contextual comments, and posting them back to GitHub.
 

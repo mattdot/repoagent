@@ -1,4 +1,4 @@
-# AI Workflow Agent
+# TPM Agent
 
 This repository contains two main components, implemented in different programming languages, to support AI workflow automation:
 

@@ -1,4 +1,4 @@
-# TPM Agent
+# Dotnet TPM Agent
 
 A Docker container-based GitHub Action for processing GitHub issues using Semantic Kernel Process Framework.
 
