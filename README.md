@@ -78,7 +78,7 @@ To integrate the TPM Agent into another repository, follow these steps:
             echo "Processing Status: ${{ steps.issue-processor.outputs.status }}"
             echo "Processing Result: ${{ steps.issue-processor.outputs.result }}"
             
-Refer to the [test.yml](./test-repository/test.yml) for complete yml file for testing
+Refer to the [test.yml](./test/test.yml) for complete yml file for testing
 
 3. **Configure Inputs**:
    Ensure that the required inputs (e.g., `issue_number`, `repo_name`) are correctly passed to the action in your workflow file.
