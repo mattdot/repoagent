@@ -150,11 +150,8 @@ class IssueProcessingAgent:
         self.logger.info("Added Labels successfully")
 
     def post_comment(self, repository, issue_number, comment):
-        owner, repo = repository.split('/')
-        self.logger.info(owner)
-        self.logger.info(repo)
         self.logger.info(f"Posting comment to issue {issue_number} in repository {repository}")
-        issue = self.github_client.get_repo(f"{owner}/{repo}").get_issue(number=issue_number)
+        issue = self.github_client.get_repo(f"{repository}").get_issue(number=issue_number)
         issue.create_comment(comment)
         # issue.add_to_labels("bug", "enhancement")
         self.logger.info("Comment posted successfully")

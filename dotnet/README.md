@@ -25,7 +25,7 @@ This action runs inside a Docker container and uses a C# application built with 
 
 ```yaml
 - name: Process GitHub Issue
-  uses: mattdot/tpmagent@v1
+  uses: mattdot/tpmagent/dotnet@v1
   with:
     issue_content: ${{ github.event.issue.body }}
     github_token: ${{ secrets.GITHUB_TOKEN }}
@@ -46,7 +46,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Process Issue with TPM Agent
-        uses: mattdot/tpmagent@v1
+        uses: mattdot/tpmagent/dotnet@v1
         with:
           issue_content: ${{ github.event.issue.body }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
