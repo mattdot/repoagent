@@ -75,7 +75,7 @@ async def run_completion(kernel: Kernel, messages: List[Dict[str, str]]) -> str:
 
     Args:
         kernel (Kernel): The Semantic Kernel instance with Azure OpenAI service.
-        messages (List): List of message dicts with 'role' and 'content'.
+        messages (List[Dict[str, str]]): List of message dicts with 'role' and 'content'.
             Supported roles: 'system', 'user', 'assistant'.
 
     Returns:
