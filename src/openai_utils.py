@@ -1,6 +1,6 @@
 import sys
 import re
-from typing import List
+from typing import Dict, List
 from urllib.parse import urlparse, parse_qs
 from semantic_kernel import Kernel
 from semantic_kernel.connectors.ai.open_ai import AzureChatCompletion
@@ -69,7 +69,7 @@ def initialize_kernel(
         sys.exit(1)
 
 
-async def run_completion(kernel: Kernel, messages: List) -> str:
+async def run_completion(kernel: Kernel, messages: List[Dict[str, str]]) -> str:
     """
     Run a chat completion using the provided kernel and message history.
 

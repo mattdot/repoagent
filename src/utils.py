@@ -1,14 +1,15 @@
 import os
 import sys
 
+from typing import Optional, Callable, Any
 
 def get_env_var(
     name: str,
     required: bool = True,
-    cast_func: callable = None,
+    cast_func: Callable[..., Any] = None,
     default=None,
     error_message: str = None,
-) -> any:
+) -> Any:
     """
     Retrieve and validate an environment variable, with optional type casting and default value.
 

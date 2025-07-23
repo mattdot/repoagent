@@ -1,7 +1,5 @@
 FROM python:3.11-slim
 
-WORKDIR /app
-
 # Use a working directory that won't be overwritten by GitHub Actions
 WORKDIR /app
 

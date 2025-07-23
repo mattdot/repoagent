@@ -141,10 +141,11 @@ def main() -> None:
     elif github_event_name == GithubEvent.ISSUE_COMMENT.value:
 
         github_issue_comment_id = get_env_var(
-            "INPUT_GITHUB_ISSUE_COMMENT_ID"
+            "INPUT_GITHUB_ISSUE_COMMENT_ID",
+            cast_func=int,
         )
     
-        handle_github_comment_event(github_issue, int(github_issue_comment_id))
+        handle_github_comment_event(github_issue, github_issue_comment_id)
 
     else:
         print(f"Unsupported GitHub event: {github_event_name}", file=sys.stderr)
