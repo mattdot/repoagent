@@ -1,93 +1,159 @@
-# TPM Agent
+# Python TPM Agent
 
-The TPM Agent operates as a modular GitHub Action designed to process GitHub issues efficiently. It provides two distinct implementations, one in .NET and the other in Python, to cater to different runtime preferences and use cases.
+This repository contains a Python-based implementation of the TPM  Agent using OpenAI. The agent is designed to process GitHub issues using a structured workflow, including analyzing issue content using OpenAI, generating contextual comments, and posting them back to GitHub.
 
-### .NET Implementation
+## Architecture
 
-The .NET-based implementation leverages the Semantic Kernel Process Framework to process GitHub issues. It is encapsulated in a Docker container and includes the following components:
+This action runs inside a Docker container and uses a python application built with OpenAI to analyze GitHub issues and provide intelligent responses. The container-based approach provides:
 
-1. **action.yml**: Defines the metadata and inputs/outputs for the GitHub Action.
-2. **Dockerfile**: Specifies the environment and dependencies required to run the .NET action.
-3. **entrypoint.sh**: Serves as the entry point for executing the action.
-4. **src/**: Contains the core logic, including `Program.cs` and the project file `TpmAgent.csproj`.
+- **Isolation**: Each action run gets a fresh, isolated environment
+- **Consistency**: Same runtime environment across different GitHub runners
+- **OpenAI Integration**: Advanced AI-powered issue analysis and response generation
+- **GitHub Integration**: Direct integration with GitHub API for issue commenting
 
-This implementation is ideal for workflows that require the robustness and performance of the .NET runtime.
-Refer to the [dotnet-readme](./dotnet/README.md) for more details on dotnet.
+## Components
 
-### Python Implementation
+- **Dockerfile**: Defines the container runtime environment with .NET 8.0 and required dependencies
+- **C# Agent**: Semantic Kernel-based application that processes GitHub issues using Process Framework patterns
+- **Entrypoint Script**: Orchestrates the container execution and GitHub Actions integration
+- **GitHub API Integration**: Uses Octokit for GitHub API interactions
 
-The Python-based implementation utilizes OpenAI to process GitHub issues. It is also encapsulated in a Docker container and includes the following components:
+## Usage
 
-1. **action.yml**: Defines the metadata and inputs/outputs for the GitHub Action.
-2. **Dockerfile**: Specifies the environment and dependencies required to run the Python action.
-3. **entrypoint.sh**: Serves as the entry point for executing the action.
-4. **requirements.txt**: Lists the Python dependencies needed for the project.
-5. **src/**: Contains the core logic, including `main.py` for OpenAI integration and `main_no_openai.py` for alternative processing.
+### Basic Usage
 
-This implementation is suitable for workflows that benefit from Python's flexibility and the capabilities of OpenAI. Refer to the [python-readme](./python/README.md) for more details on python.
+```yaml
+- name: Process GitHub Issue
+  uses: mattdot/tpmagent/python@v1
+  with:
+    issue_content: ${{ github.event.issue.body }}
+    github_token: ${{ secrets.GITHUB_TOKEN }}
+    repository: ${{ github.repository }}
+    issue_number: ${{ github.event.issue.number }}
+    azure_openai_api_type: ${{ secrets.AZURE_OPENAI_TYPE }}
+    azure_openai_key: ${{ secrets.AZURE_OPENAI_KEY }}
+    azure_openai_endpoint: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
+    azure_openai_api_version: ${{ secrets.AZURE_OPENAI_API_VERSION }}
+    azure_openai_deployment: ${{ secrets.AZURE_OPENAI_DEPLOYMENT }}
+```
 
+### Advanced Usage with Issue Events
 
-## Integrating TPM Agent from any other repository
+```yaml
+name: Process Issues
+on:
+  issues:
+    types: [opened, edited]
 
-To integrate the TPM Agent into another repository, follow these steps:
+jobs:
+  process-issue:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Process Issue with TPM Agent
+        uses: mattdot/tpmagent/python@v1
+        with:
+          issue_content: ${{ github.event.issue.body }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+          issue_number: ${{ github.event.issue.number }}
+          azure_openai_api_type: ${{ secrets.AZURE_OPENAI_TYPE }}
+          azure_openai_key: ${{ secrets.AZURE_OPENAI_KEY }}
+          azure_openai_endpoint: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
+          azure_openai_api_version: ${{ secrets.AZURE_OPENAI_API_VERSION }}
+          azure_openai_deployment: ${{ secrets.AZURE_OPENAI_DEPLOYMENT }}
+        id: issue-processor
 
-1. **Referencing TPM Agent in External GitHub Workflows**:  
-    For example, if you have a test repository that needs to use the TPM Agent, you can integrate it by updating your workflow file. The workflow (e.g., `.github/workflows/test.yml`) can be configured to run when a GitHub Issue is opened, edited, or otherwise modified.
+      - name: Check Processing Results
+        run: |
+          echo "Processing Status: ${{ steps.issue-processor.outputs.status }}"
+          echo "Processing Result: ${{ steps.issue-processor.outputs.result }}"
+```
 
-2. Set the required Secrets on the Test GitHub repository
-| Input | Description | Required For |
-|-------|-------------|-------------|
-| `GitHub_TOKEN` | GitHub token for API access | .NET and Python |
-| `AZURE_OPENAI_TYPE ` | Azure OpenAI Type | Python |
-| `AZURE_OPENAI_KEY ` | Azure OpenAI Key | Python |
-| `AZURE_OPENAI_ENDPOINT` | Azure OpenAI Endpoint | Python |
-| `AZURE_OPENAI_API_VERSION` | Azure OpenAI API Version | Python |
-| `AZURE_OPENAI_DEPLOYMENT ` | Azure OpenAI Deployment | Python |
+## Inputs
 
-3. **Reference the Action in Your Workflow**:
-   Update your GitHub Actions workflow file to include the TPM Agent. For example:
-   
-   ```yaml
-    name: Issue Processing
-    on:
-    issues:
-        types: [opened, edited]
+| Input | Description | Required | Default |
+|-------|-------------|----------|---------|
+| `issue_content` | The content of the GitHub issue to process | Yes | - |
+| `github_token` | GitHub token for API access | Yes | - |
+| `repository` | Repository in the format owner/repo | Yes | - |
+| `issue_number` | Issue number to comment on | Yes | - |
+| `azure_openai_api_type` | Open AI API Type | Yes | - |
+| `azure_openai_key` | Open AI API Key | Yes | - |
+| `azure_openai_endpoint` | Open AI API Endpoint | Yes | - |
+| `azure_openai_api_version` | Open AI API Version | Yes | - |
+| `azure_openai_deployment` | Open AI API Deployment | Yes | - |
 
-    jobs:
-    process-issue:
-        runs-on: ubuntu-latest
-        steps:
-        - name: Process Issue
-            uses: mattdot/repoagent/dotnet@main
-            # uses: mattdot/repoagent/python@main
-            with:
-            issue_content: ${{ github.event.issue.body }}
-            github_token: ${{ secrets.GITHUB_TOKEN }}
-            repository: ${{ github.repository }}
-            issue_number: ${{ github.event.issue.number }}
-            # Below are required varaibles for python implementation
-            # azure_openai_api_type: ${{ secrets.AZURE_OPENAI_TYPE }}
-            # azure_openai_key: ${{ secrets.AZURE_OPENAI_KEY }}
-            # azure_openai_endpoint: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
-            # azure_openai_api_version: ${{ secrets.AZURE_OPENAI_API_VERSION }}
-            # azure_openai_deployment: ${{ secrets.AZURE_OPENAI_DEPLOYMENT }}
-            id: issue-processor
-        
-        - name: Display Processing Results
-            run: |
-            echo "Processing Status: ${{ steps.issue-processor.outputs.status }}"
-            echo "Processing Result: ${{ steps.issue-processor.outputs.result }}"
-            
-Refer to the [test.yml](./test-repo/test.yml) for complete yml file for testing
+## Outputs
 
-3. **Configure Inputs**:
-   Ensure that the required inputs (e.g., `issue_number`, `repo_name`) are correctly passed to the action in your workflow file.
-
-4. **Test the Integration**:
-   Trigger the workflow in your repository to verify that the TPM Agent processes issues as expected.
-
-By following these steps, you can seamlessly integrate the TPM Agent into your repository's workflows, leveraging its capabilities to process GitHub issues efficiently.
-
-These steps ensure that both the .NET and Python implementations of the TPM Agent are functioning correctly and can be integrated seamlessly into your workflows.
+| Output | Description |
+|--------|-------------|
+| `result` | Result of the issue processing |
+| `status` | Status of the operation (`success`, `error`) |
 
 
+## Requirements
+
+- Python 3.9 or higher
+- `PyGithub` library for GitHub API integration
+
+## Setup
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/mattdot/repoagent.git
+   cd repoagent/python
+   ```
+
+2. Install dependencies:
+   ```bash
+   pip install -r src/requirements.txt
+   ```
+
+3. Build the Docker image:
+   ```bash
+   docker build -t python-repoagent .
+   ```
+
+## Usage
+
+### Running Locally
+
+1. Set the required environment variables:
+   - `INPUT_ISSUE_CONTENT`: Content of the GitHub issue
+   - `INPUT_GITHUB_TOKEN`: GitHub personal access token
+   - `INPUT_REPOSITORY`: Repository in the format `owner/repo`
+   - `INPUT_ISSUE_NUMBER`: Issue number to process
+   - `INPUT_AZURE_OPENAI_ENDPOINT`: Azure OpenAI Endpoint
+   - `INPUT_AZURE_OPENAI_DEPLOYMENT`: Azure OpenAI Deployment
+   - `INPUT_AZURE_OPENAI_API_VERSION`: Azure OpenAI Version
+   - `INPUT_AZURE_OPENAI_KEY`: Azure OpenAI Key
+   - `INPUT_AZURE_OPENAI_TYPE`: Azure OpenAI Type
+
+2. Run the script:
+   ```bash
+   python src/main.py
+   ```
+
+### Running with Docker
+
+1. Run the Docker container:
+   ```bash
+   docker run -e INPUT_ISSUE_CONTENT="<issue_content>" \
+              -e INPUT_GITHUB_TOKEN="<github_token>" \
+              -e INPUT_REPOSITORY="<owner/repo>" \
+              -e INPUT_ISSUE_NUMBER="<issue_number>" \
+              -e INPUT_AZURE_OPENAI_ENDPOINT="<Azure OpenAI Endpoint>" \
+              -e INPUT_AZURE_OPENAI_DEPLOYMENT="<Azure OpenAI Deployment>" \
+              -e INPUT_AZURE_OPENAI_API_VERSION="<Azure OpenAI Version>" \
+              -e INPUT_AZURE_OPENAI_KEY="<Azure OpenAI Key>" \
+              -e INPUT_AZURE_OPENAI_TYPE="<Azure OpenAI Type>" \
+              python-repoagent
+   ```
+
+## Contributing
+
+Contributions are welcome! Please fork the repository and submit a pull request.
+
+## License
+
+This project is licensed under the terms of the LICENSE file.
