@@ -1,195 +1,93 @@
 # TPM Agent
 
-A Docker container-based GitHub Action for processing GitHub issues using Semantic Kernel Process Framework.
+The TPM Agent operates as a modular GitHub Action designed to process GitHub issues efficiently. It provides two distinct implementations, one in .NET and the other in Python, to cater to different runtime preferences and use cases.
 
-## Architecture
+### .NET Implementation
 
-This action runs inside a Docker container and uses a C# application built with Semantic Kernel 1.60 to analyze GitHub issues and provide intelligent responses. The container-based approach provides:
+The .NET-based implementation leverages the Semantic Kernel Process Framework to process GitHub issues. It is encapsulated in a Docker container and includes the following components:
 
-- **Isolation**: Each action run gets a fresh, isolated environment
-- **Consistency**: Same runtime environment across different GitHub runners
-- **Semantic Kernel Integration**: Advanced AI-powered issue analysis and response generation
-- **Process Framework**: Uses Semantic Kernel Process Framework pattern for multi-step workflows
-- **GitHub Integration**: Direct integration with GitHub API for issue commenting
+1. **action.yml**: Defines the metadata and inputs/outputs for the GitHub Action.
+2. **Dockerfile**: Specifies the environment and dependencies required to run the .NET action.
+3. **entrypoint.sh**: Serves as the entry point for executing the action.
+4. **src/**: Contains the core logic, including `Program.cs` and the project file `TpmAgent.csproj`.
 
-## Components
+This implementation is ideal for workflows that require the robustness and performance of the .NET runtime.
+Refer to the [dotnet-readme](./dotnet/README.md) for more details on dotnet.
 
-- **Dockerfile**: Defines the container runtime environment with .NET 8.0 and required dependencies
-- **C# Agent**: Semantic Kernel-based application that processes GitHub issues using Process Framework patterns
-- **Entrypoint Script**: Orchestrates the container execution and GitHub Actions integration
-- **GitHub API Integration**: Uses Octokit for GitHub API interactions
+### Python Implementation
 
-## Usage
+The Python-based implementation utilizes OpenAI to process GitHub issues. It is also encapsulated in a Docker container and includes the following components:
 
-### Basic Usage
+1. **action.yml**: Defines the metadata and inputs/outputs for the GitHub Action.
+2. **Dockerfile**: Specifies the environment and dependencies required to run the Python action.
+3. **entrypoint.sh**: Serves as the entry point for executing the action.
+4. **requirements.txt**: Lists the Python dependencies needed for the project.
+5. **src/**: Contains the core logic, including `main.py` for OpenAI integration and `main_no_openai.py` for alternative processing.
 
-```yaml
-- name: Process GitHub Issue
-  uses: mattdot/tpmagent@v1
-  with:
-    issue_content: ${{ github.event.issue.body }}
-    github_token: ${{ secrets.GITHUB_TOKEN }}
-    repository: ${{ github.repository }}
-    issue_number: ${{ github.event.issue.number }}
-```
+This implementation is suitable for workflows that benefit from Python's flexibility and the capabilities of OpenAI. Refer to the [python-readme](./python/README.md) for more details on python.
 
-### Advanced Usage with Issue Events
 
-```yaml
-name: Process Issues
-on:
-  issues:
-    types: [opened, edited]
+## Integrating TPM Agent from any other repository
 
-jobs:
-  process-issue:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Process Issue with TPM Agent
-        uses: mattdot/tpmagent@v1
-        with:
-          issue_content: ${{ github.event.issue.body }}
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          repository: ${{ github.repository }}
-          issue_number: ${{ github.event.issue.number }}
-        id: issue-processor
+To integrate the TPM Agent into another repository, follow these steps:
 
-      - name: Check Processing Results
-        run: |
-          echo "Processing Status: ${{ steps.issue-processor.outputs.status }}"
-          echo "Processing Result: ${{ steps.issue-processor.outputs.result }}"
-```
+1. **Referencing TPM Agent in External GitHub Workflows**:  
+    For example, if you have a test repository that needs to use the TPM Agent, you can integrate it by updating your workflow file. The workflow (e.g., `.github/workflows/test.yml`) can be configured to run when a GitHub Issue is opened, edited, or otherwise modified.
 
-## Inputs
+2. Set the required Secrets on the Test GitHub repository
+| Input | Description | Required For |
+|-------|-------------|-------------|
+| `GitHub_TOKEN` | GitHub token for API access | .NET and Python |
+| `AZURE_OPENAI_TYPE ` | Azure OpenAI Type | Python |
+| `AZURE_OPENAI_KEY ` | Azure OpenAI Key | Python |
+| `AZURE_OPENAI_ENDPOINT` | Azure OpenAI Endpoint | Python |
+| `AZURE_OPENAI_API_VERSION` | Azure OpenAI API Version | Python |
+| `AZURE_OPENAI_DEPLOYMENT ` | Azure OpenAI Deployment | Python |
 
-| Input | Description | Required | Default |
-|-------|-------------|----------|---------|
-| `issue_content` | The content of the GitHub issue to process | Yes | - |
-| `github_token` | GitHub token for API access | Yes | - |
-| `repository` | Repository in the format owner/repo | Yes | - |
-| `issue_number` | Issue number to comment on | Yes | - |
+3. **Reference the Action in Your Workflow**:
+   Update your GitHub Actions workflow file to include the TPM Agent. For example:
+   
+   ```yaml
+    name: Issue Processing
+    on:
+    issues:
+        types: [opened, edited]
 
-## Outputs
+    jobs:
+    process-issue:
+        runs-on: ubuntu-latest
+        steps:
+        - name: Process Issue
+            uses: mattdot/repoagent/dotnet@main
+            # uses: mattdot/repoagent/python@main
+            with:
+            issue_content: ${{ github.event.issue.body }}
+            github_token: ${{ secrets.GITHUB_TOKEN }}
+            repository: ${{ github.repository }}
+            issue_number: ${{ github.event.issue.number }}
+            # Below are required varaibles for python implementation
+            # azure_openai_api_type: ${{ secrets.AZURE_OPENAI_TYPE }}
+            # azure_openai_key: ${{ secrets.AZURE_OPENAI_KEY }}
+            # azure_openai_endpoint: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
+            # azure_openai_api_version: ${{ secrets.AZURE_OPENAI_API_VERSION }}
+            # azure_openai_deployment: ${{ secrets.AZURE_OPENAI_DEPLOYMENT }}
+            id: issue-processor
+        
+        - name: Display Processing Results
+            run: |
+            echo "Processing Status: ${{ steps.issue-processor.outputs.status }}"
+            echo "Processing Result: ${{ steps.issue-processor.outputs.result }}"
+            
+Refer to the [test.yml](./test-repo/test.yml) for complete yml file for testing
 
-| Output | Description |
-|--------|-------------|
-| `result` | Result of the issue processing |
-| `status` | Status of the operation (`success`, `error`) |
+3. **Configure Inputs**:
+   Ensure that the required inputs (e.g., `issue_number`, `repo_name`) are correctly passed to the action in your workflow file.
 
-## Process Framework Workflow
+4. **Test the Integration**:
+   Trigger the workflow in your repository to verify that the TPM Agent processes issues as expected.
 
-The action implements a Semantic Kernel Process Framework pattern with the following steps:
+By following these steps, you can seamlessly integrate the TPM Agent into your repository's workflows, leveraging its capabilities to process GitHub issues efficiently.
 
-1. **Issue Analysis**: Analyzes the issue content to determine:
-   - Issue type (bug, feature, question)
-   - Priority level (high, medium, low)
-   - Related topics (TPM, Security, Docker, etc.)
+These steps ensure that both the .NET and Python implementations of the TPM Agent are functioning correctly and can be integrated seamlessly into your workflows.
 
-2. **Comment Generation**: Creates an intelligent response based on:
-   - Analysis results
-   - Contextual recommendations
-   - Next steps and guidance
 
-3. **GitHub Integration**: Posts the generated comment to the issue using:
-   - GitHub API via Octokit
-   - Proper authentication and error handling
-   - Structured formatting
-
-## Container Architecture
-
-The action is built as a multi-stage Docker container:
-
-1. **Build Stage**: Uses .NET 8.0 SDK to build the C# Semantic Kernel application
-2. **Runtime Stage**: Uses .NET 8.0 runtime with required dependencies for execution
-3. **Entrypoint**: Bash script that orchestrates the C# agent execution
-
-## Example Workflow
-
-```yaml
-name: Issue Processing
-on:
-  issues:
-    types: [opened, edited]
-
-jobs:
-  process-issue:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Process Issue
-        uses: mattdot/tpmagent@v1
-        with:
-          issue_content: ${{ github.event.issue.body }}
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          repository: ${{ github.repository }}
-          issue_number: ${{ github.event.issue.number }}
-        id: issue-processor
-      
-      - name: Display Processing Results
-        run: |
-          echo "Processing Status: ${{ steps.issue-processor.outputs.status }}"
-          echo "Processing Result: ${{ steps.issue-processor.outputs.result }}"
-```
-
-## Features
-
-### Intelligent Issue Analysis
-
-The agent analyzes GitHub issues to determine:
-- **Issue Type**: Automatically categorizes as bug, feature request, or question
-- **Priority Level**: Assigns high, medium, or low priority based on keywords
-- **Topic Detection**: Identifies relevant topics (TPM, Security, Docker, etc.)
-
-### Contextual Response Generation
-
-Based on the analysis, the agent generates:
-- **Structured Comments**: Well-formatted responses with sections
-- **Actionable Guidance**: Specific next steps based on issue type
-- **Context-Aware Recommendations**: Tailored advice for different topics
-
-### GitHub Integration
-
-- **Automatic Commenting**: Posts responses directly to GitHub issues
-- **API Integration**: Uses Octokit for robust GitHub API interactions
-- **Error Handling**: Comprehensive error management with detailed logging
-
-## Development
-
-### Local Development
-
-To build and test the Docker container locally:
-
-```bash
-# Build the container
-docker build -t tpmagent .
-
-# Test the container
-# Test the container with sample issue content
-docker run \
-  -e INPUT_ISSUE_CONTENT="This is a bug report about TPM functionality" \
-  -e INPUT_GITHUB_TOKEN="your-token" \
-  -e INPUT_REPOSITORY="owner/repo" \
-  -e INPUT_ISSUE_NUMBER="1" \
-  tpmagent
-```
-
-### C# Application Structure
-
-The core application is built with:
-- **Semantic Kernel 1.60**: For AI-powered issue analysis using Process Framework patterns
-- **.NET 8.0**: Modern, performant runtime
-- **Octokit**: GitHub API integration for issue commenting
-- **Dependency Injection**: Clean architecture with logging and configuration
-- **Environment Variables**: GitHub Actions input/output integration
-
-### Process Framework Implementation
-
-The application implements a process-like workflow:
-
-1. **ProcessContext**: Maintains state throughout the workflow
-2. **Analysis Step**: Analyzes issue content and categorizes it
-3. **Generation Step**: Creates contextual responses based on analysis
-4. **Integration Step**: Posts comments to GitHub using the API
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
