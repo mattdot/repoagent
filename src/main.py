@@ -25,7 +25,11 @@ COMMENT_LOOKUP = "/apply"
 
 def handle_github_issues_event(issue: Issue, kernel: Kernel) -> None:
     """
-    Handle GitHub issue events by generating and posting an AI-enhanced evaluation comment.
+    Generate an AI-enhanced evaluation for a GitHub issue and post it as a comment.
+
+    Args:
+        issue (Issue): The GitHub issue to process.
+        kernel (Kernel): The initialized AI kernel for generating responses.
     """
     messages = build_user_story_eval_prompt(issue.title, issue.body)
 
@@ -42,7 +46,11 @@ def handle_github_issues_event(issue: Issue, kernel: Kernel) -> None:
 
 def handle_github_comment_event(issue: Issue, issue_comment_id: int) -> None:
     """
-    Handle GitHub issue comment events by applying AI-suggested enhancements if requested.
+    Apply AI-suggested enhancements to a GitHub issue if requested in a comment.
+
+    Args:
+        issue (Issue): The GitHub issue to update.
+        issue_comment_id (int): The ID of the comment triggering the enhancement.
     """
     comment = get_github_comment(issue, issue_comment_id)
 
@@ -78,8 +86,11 @@ def handle_github_comment_event(issue: Issue, issue_comment_id: int) -> None:
 
 
 def main() -> None:
-    """Main entry point for the issue enhancer agent."""
+    """
+    Main entry point for the issue enhancer agent.
 
+    Determines the GitHub event type and processes the issue or comment accordingly.
+    """
     check_all = get_env_var(
         "INPUT_CHECK_ALL",
         required=False,
