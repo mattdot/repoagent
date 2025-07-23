@@ -1,159 +1,151 @@
-# Python TPM Agent
+# TPM Agent: AI-Powered GitHub Issue Enhancer
 
-This repository contains a Python-based implementation of the TPM  Agent using OpenAI. The agent is designed to process GitHub issues using a structured workflow, including analyzing issue content using OpenAI, generating contextual comments, and posting them back to GitHub.
+## Overview
 
-## Architecture
+TPM Agent is a GitHub Action that uses AI to analyze, evaluate, and improve GitHub issues, transforming them into high-quality user stories ready for engineering work. It leverages Azure OpenAI and Semantic Kernel to provide actionable feedback, suggest labels, and refactor stories for clarity, completeness, and testability.
 
-This action runs inside a Docker container and uses a python application built with OpenAI to analyze GitHub issues and provide intelligent responses. The container-based approach provides:
+## Features
 
-- **Isolation**: Each action run gets a fresh, isolated environment
-- **Consistency**: Same runtime environment across different GitHub runners
-- **OpenAI Integration**: Advanced AI-powered issue analysis and response generation
-- **GitHub Integration**: Direct integration with GitHub API for issue commenting
-
-## Components
-
-- **Dockerfile**: Defines the container runtime environment with .NET 8.0 and required dependencies
-- **C# Agent**: Semantic Kernel-based application that processes GitHub issues using Process Framework patterns
-- **Entrypoint Script**: Orchestrates the container execution and GitHub Actions integration
-- **GitHub API Integration**: Uses Octokit for GitHub API interactions
+- **AI-Driven Issue Evaluation:** Summarizes, checks completeness, and judges readiness of issues.
+- **Refactored User Stories:** Suggests improved titles, descriptions, and acceptance criteria when needed.
+- **Label Suggestions:** Recommends up to 3 relevant GitHub labels.
+- **Markdown Round-Trip:** Robust parsing and formatting for seamless GitHub comment updates.
+- **Input Validation:** Ensures all required inputs are present and valid.
+- **Modular Codebase:** Clean separation of concerns for maintainability.
 
 ## Usage
 
-### Basic Usage
+### As a GitHub Action
+
+This action is designed to run in a Docker container as part of your GitHub workflow. It requires configuration of environment variables for GitHub and Azure OpenAI access.
+
+#### Example Workflow
 
 ```yaml
-- name: Process GitHub Issue
-  uses: mattdot/tpmagent/python@v1
-  with:
-    issue_content: ${{ github.event.issue.body }}
-    github_token: ${{ secrets.GITHUB_TOKEN }}
-    repository: ${{ github.repository }}
-    issue_number: ${{ github.event.issue.number }}
-    azure_openai_api_type: ${{ secrets.AZURE_OPENAI_TYPE }}
-    azure_openai_key: ${{ secrets.AZURE_OPENAI_KEY }}
-    azure_openai_endpoint: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
-    azure_openai_api_version: ${{ secrets.AZURE_OPENAI_API_VERSION }}
-    azure_openai_deployment: ${{ secrets.AZURE_OPENAI_DEPLOYMENT }}
-```
-
-### Advanced Usage with Issue Events
-
-```yaml
-name: Process Issues
+name: AI Issue Enhancer
 on:
   issues:
     types: [opened, edited]
+  issue_comment:
+    types: [created]
 
 jobs:
-  process-issue:
+  enhance:
     runs-on: ubuntu-latest
     steps:
-      - name: Process Issue with TPM Agent
-        uses: mattdot/tpmagent/python@v1
+      - name: Run TPM Agent
+        uses: mattdot/tpmagent@v1
         with:
-          issue_content: ${{ github.event.issue.body }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          repository: ${{ github.repository }}
-          issue_number: ${{ github.event.issue.number }}
-          azure_openai_api_type: ${{ secrets.AZURE_OPENAI_TYPE }}
-          azure_openai_key: ${{ secrets.AZURE_OPENAI_KEY }}
-          azure_openai_endpoint: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
-          azure_openai_api_version: ${{ secrets.AZURE_OPENAI_API_VERSION }}
-          azure_openai_deployment: ${{ secrets.AZURE_OPENAI_DEPLOYMENT }}
-        id: issue-processor
-
-      - name: Check Processing Results
-        run: |
-          echo "Processing Status: ${{ steps.issue-processor.outputs.status }}"
-          echo "Processing Result: ${{ steps.issue-processor.outputs.result }}"
+          github_repository: ${{ github.repository }}
+          github_event_name: ${{ github.event_name }}
+          github_issue_id: ${{ github.event.issue.number }}
+          check_all: false
+          azure_openai_api_key: ${{ secrets.AZURE_OPENAI_KEY }}
+          azure_openai_target_uri: ${{ secrets.AZURE_OPENAI_TARGET_URI }}
+          github_issue_comment_id: ${{ github.event.comment.id }}
 ```
+
+### Local Development
+
+1. Clone the repo.
+
+2. Install dependencies:
+
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. Run/test scripts in `src/` as needed.
+
+### Local Testing with Docker
+
+You can test the action locally by running the Docker container directly. Example:
+
+```bash
+docker build -t tpmagent .
+docker run --rm \
+  -e INPUT_GITHUB_TOKEN=your_github_token \
+  -e INPUT_GITHUB_REPOSITORY=owner/repo \
+  -e INPUT_GITHUB_EVENT_NAME=issues \
+  -e INPUT_GITHUB_ISSUE_ID=123 \
+  -e INPUT_AZURE_OPENAI_API_KEY=your_openai_key \
+  -e INPUT_AZURE_OPENAI_TARGET_URI=your_openai_target_uri \
+  tpmagent
+```
+
+Adjust the environment variables as needed for your test scenario. For `issue_comment` events, also set `INPUT_GITHUB_ISSUE_COMMENT_ID`.
+
+## File Structure
+
+- `src/main.py` - Entry point, event handling, AI integration
+- `src/github_utils.py` - GitHub API helpers
+- `src/openai_utils.py` - OpenAI/Semantic Kernel helpers
+- `src/response_models.py` - Markdown parsing/generation
+- `src/prompts.py` - Prompt construction
+- `action.yml` - GitHub Action metadata
+- `requirements.txt` - Python dependencies
+- `.github/workflows/` - Example workflows
 
 ## Inputs
 
-| Input | Description | Required | Default |
-|-------|-------------|----------|---------|
-| `issue_content` | The content of the GitHub issue to process | Yes | - |
-| `github_token` | GitHub token for API access | Yes | - |
-| `repository` | Repository in the format owner/repo | Yes | - |
-| `issue_number` | Issue number to comment on | Yes | - |
-| `azure_openai_api_type` | Open AI API Type | Yes | - |
-| `azure_openai_key` | Open AI API Key | Yes | - |
-| `azure_openai_endpoint` | Open AI API Endpoint | Yes | - |
-| `azure_openai_api_version` | Open AI API Version | Yes | - |
-| `azure_openai_deployment` | Open AI API Deployment | Yes | - |
+### Required for All Events
 
-## Outputs
+| Name                | Description                                            | Required | Example                       |
+| ------------------- | ------------------------------------------------------ | -------- | ----------------------------- |
+| `github_token`      | GitHub token for API access                            | Yes      | `${{ secrets.GITHUB_TOKEN }}` |
+| `github_repository` | Repository in `owner/repo` format                      | Yes      | `octocat/Hello-World`         |
+| `github_event_name` | Name of the GitHub event                               | Yes      | `issues` or `issue_comment`   |
+| `github_issue_id`   | ID of the GitHub issue to process                      | Yes      | `123`                         |
+| `check_all`         | If true, checks all issues (overrides label filtering) | No       | `true` or `false`             |
 
-| Output | Description |
-|--------|-------------|
-| `result` | Result of the issue processing |
-| `status` | Status of the operation (`success`, `error`) |
+### Additional Required for `issues` Event
 
+| Name                      | Description                             | Required | Example                                  |
+| ------------------------- | --------------------------------------- | -------- | ---------------------------------------- |
+| `azure_openai_api_key`    | Azure OpenAI API key                    | Yes      | `${{ secrets.AZURE_OPENAI_KEY }}`        |
+| `azure_openai_target_uri` | Azure OpenAI target URI (full endpoint) | Yes      | `${{ secrets.AZURE_OPENAI_TARGET_URI }}` |
 
-## Requirements
+### Additional Required for `issue_comment` Event
 
-- Python 3.9 or higher
-- `PyGithub` library for GitHub API integration
+| Name                      | Description                               | Required | Example |
+| ------------------------- | ----------------------------------------- | -------- | ------- |
+| `github_issue_comment_id` | ID of the GitHub issue comment to process | Yes      | `456`   |
 
-## Setup
+See `action.yml` for a full list and details.
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/mattdot/repoagent.git
-   cd repoagent/python
-   ```
+## Configuration
 
-2. Install dependencies:
-   ```bash
-   pip install -r src/requirements.txt
-   ```
+- Requires Azure OpenAI credentials and GitHub token as inputs or environment variables.
+- See `action.yml` for all supported inputs.
 
-3. Build the Docker image:
-   ```bash
-   docker build -t python-repoagent .
-   ```
+## Supported Workflow Events and Triggers
 
-## Usage
+This action supports the following GitHub workflow events:
 
-### Running Locally
+- **issues**
+  - Triggered on issue events such as `opened` and `edited`.
+  - Used to analyze and enhance new or updated issues.
+- **issue_comment**
+  - Triggered on issue comment events such as `created`.
+  - Used to apply enhancements when a user comments with a specific command (e.g., `/apply`).
 
-1. Set the required environment variables:
-   - `INPUT_ISSUE_CONTENT`: Content of the GitHub issue
-   - `INPUT_GITHUB_TOKEN`: GitHub personal access token
-   - `INPUT_REPOSITORY`: Repository in the format `owner/repo`
-   - `INPUT_ISSUE_NUMBER`: Issue number to process
-   - `INPUT_AZURE_OPENAI_ENDPOINT`: Azure OpenAI Endpoint
-   - `INPUT_AZURE_OPENAI_DEPLOYMENT`: Azure OpenAI Deployment
-   - `INPUT_AZURE_OPENAI_API_VERSION`: Azure OpenAI Version
-   - `INPUT_AZURE_OPENAI_KEY`: Azure OpenAI Key
-   - `INPUT_AZURE_OPENAI_TYPE`: Azure OpenAI Type
+Example configuration in your workflow:
 
-2. Run the script:
-   ```bash
-   python src/main.py
-   ```
+```yaml
+on:
+  issues:
+    types: [opened, edited]
+  issue_comment:
+    types: [created]
+```
 
-### Running with Docker
-
-1. Run the Docker container:
-   ```bash
-   docker run -e INPUT_ISSUE_CONTENT="<issue_content>" \
-              -e INPUT_GITHUB_TOKEN="<github_token>" \
-              -e INPUT_REPOSITORY="<owner/repo>" \
-              -e INPUT_ISSUE_NUMBER="<issue_number>" \
-              -e INPUT_AZURE_OPENAI_ENDPOINT="<Azure OpenAI Endpoint>" \
-              -e INPUT_AZURE_OPENAI_DEPLOYMENT="<Azure OpenAI Deployment>" \
-              -e INPUT_AZURE_OPENAI_API_VERSION="<Azure OpenAI Version>" \
-              -e INPUT_AZURE_OPENAI_KEY="<Azure OpenAI Key>" \
-              -e INPUT_AZURE_OPENAI_TYPE="<Azure OpenAI Type>" \
-              python-repoagent
-   ```
+See the [GitHub Actions documentation](https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows) for more details on workflow events and triggers.
 
 ## Contributing
 
-Contributions are welcome! Please fork the repository and submit a pull request.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ## License
 
-This project is licensed under the terms of the LICENSE file.
+MIT License. See [LICENSE](LICENSE).

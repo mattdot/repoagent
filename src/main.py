@@ -1,182 +1,156 @@
-import openai
-import os
-import logging
-import re
-import json
-from github import Github
+import sys
+import asyncio
 
-def classify_workitem(work_item):
+# Third-party imports
+from github.Issue import Issue
+from semantic_kernel import Kernel
+
+# Local imports
+from github_utils import (
+    GithubEvent,
+    GithubLabel,
+    get_github_issue,
+    get_github_comment,
+    get_ai_enhanced_comment,
+    has_label,
+    create_github_issue_comment,
+    update_github_issue,
+)
+from openai_utils import initialize_kernel, run_completion
+from prompts import build_user_story_eval_prompt
+from utils import get_env_var
+from response_models import UserStoryEvalResponse
+
+COMMENT_LOOKUP = "/apply"
+
+def handle_github_issues_event(issue: Issue, kernel: Kernel) -> None:
     """
-    Classify a work item as a bug or not using OpenAI's Chat Completion API.
+    Generate an AI-enhanced evaluation for a GitHub issue and post it as a comment.
 
     Args:
-        work_item (dict): The work item to classify.
-
-    Returns:
-        str: Classification result (e.g., 'Bug' or 'Not a Bug').
+        issue (Issue): The GitHub issue to process.
+        kernel (Kernel): The initialized AI kernel for generating responses.
     """
-    # Read environment variables
-    openai.api_type = os.getenv("INPUT_AZURE_OPENAI_API_TYPE", "azure")
-    openai.api_key = os.getenv("INPUT_AZURE_OPENAI_KEY")
-    openai.api_base = os.getenv("INPUT_AZURE_OPENAI_ENDPOINT")
-    openai.api_version = os.getenv("INPUT_AZURE_OPENAI_API_VERSION")
-    deployment_name = os.getenv("INPUT_AZURE_OPENAI_DEPLOYMENT")
+    messages = build_user_story_eval_prompt(issue.title, issue.body)
 
-    # Define system and user prompts
-    #system_prompt = "You are a helpful software engineer assistant that classifies work items as bugs or not."
-    system_prompt = """
-        You are a helpful software engineer assistant that classifies work items as bugs or not.
-        
-        You will be provided with a work item number and description, and your task is to determine if it is a bug or story or feature by analyzing the content of the work item.
-        If it is a bug, respond with "Bug". 
-            If the work item is a bug, it should describe an issue or defect in the code that needs to be fixed.
-            If the work item is a bug, it should include specific details about the problem, such as error messages, unexpected behavior, or steps to reproduce the issue.
-        If it is story, respond with "Story".
-        If it is a feature, respond with "Feature".
-        If you are unsure, respond with "Uncertain" and provide a brief explanation.
-        If the work item is a bug, review the work item description and related code to identify the root cause, include any potential resolution steps or suggestions for fixing the issue.
-        If the work item is a bug, review the work item description and related code, and pose questions if unable to provide resolution steps.
-        If the work item contains priority information, include it in your response.
-        Provide your classification in the following format:
-        ```json
-        {
-            "classification": "classification type. For example: "Bug", "Story", "Feature", "Uncertain"
-            "explanation": "Brief explanation of your classification decision.",
-            "priority": "Optional priority level for the work item, e.g., 'High', 'Medium', 'Low'.",
-            "resolution": "Optional resolution steps or suggestions if applicable. For example, 'Investigate the issue in the login module and fix the null pointer exception.'",
-            "questions": "Optional questions for clarification if unable to provide resolution steps. For example, 'Could you provide more details about the error message encountered?'"
-        }
-        ```
+    try:
+        response_text = asyncio.run(run_completion(kernel, messages))
+        response = UserStoryEvalResponse.from_text(response_text).to_markdown()
 
-        """
-    
-    
-    user_prompt = f"Classify the following work item:\n{work_item}"
+        create_github_issue_comment(issue, response)
+        print(f"AI Response for Issue {issue.number} (Markdown):\n\n{response}")
+    except Exception as e:
+        print(f"Error running Azure OpenAI completion: {e}", file=sys.stderr)
+        sys.exit(1)
 
-    # Call OpenAI's Chat Completion API
-    response = openai.ChatCompletion.create(
-        # model=config["model"],
-        engine=deployment_name,
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt}
-        ]
+
+def handle_github_comment_event(issue: Issue, issue_comment_id: int) -> None:
+    """
+    Apply AI-suggested enhancements to a GitHub issue if requested in a comment.
+
+    Args:
+        issue (Issue): The GitHub issue to update.
+        issue_comment_id (int): The ID of the comment triggering the enhancement.
+    """
+    comment = get_github_comment(issue, issue_comment_id)
+
+    if COMMENT_LOOKUP not in comment.body:
+        print(f"Comment {issue_comment_id} does not require processing.")
+        return
+
+    ai_enhanced_comment = get_ai_enhanced_comment(issue)
+
+    if ai_enhanced_comment is None:
+        return
+
+    user_story_eval = UserStoryEvalResponse.from_markdown(ai_enhanced_comment)
+
+    update_github_issue(
+        issue,
+        title=user_story_eval.refactored.title,
+        body=user_story_eval.refactored.body_markdown(),
+        labels=user_story_eval.labels,
     )
 
-    # Extract and return the classification result
-    #print(response["choices"][0]["message"]["content"].strip())
-    reply = response["choices"][0]["message"]["content"].strip()
+    quoted_body = "\n".join([f"> {line}" for line in user_story_eval.to_markdown().strip().splitlines()])
 
-    result = extract_json_from_response(response["choices"][0]["message"]["content"].strip())
+    # Confirmation comment quoting the original enhancement comment
+    confirmation_comment = (
+        f"✅ Applied enhancements based on the following comment:\n\n"
+        f"{quoted_body}"
+    )
 
-    try:
-        parsed_result = json.loads(result)
-        classificationResult = parsed_result.get("classification", "Unknown")
-    except json.JSONDecodeError:
-        raise ValueError(f"❌ Model returned non-JSON: {result}")
+    create_github_issue_comment(
+        issue, confirmation_comment
+    )
 
-    # return classificationResult
-    return parsed_result, reply
 
-def extract_json_from_response(reply):
-    # Match first code block with json, fallback to raw content
-    match = re.search(r"```json\s*(\{.*?\})\s*```", reply, re.DOTALL)
-    if match:
-        return match.group(1)
-    else:
-        return reply.strip()
+def main() -> None:
+    """
+    Main entry point for the issue enhancer agent.
 
-class IssueProcessingAgent:
-    def __init__(self, logger, github_client):
-        self.logger = logger
-        self.github_client = github_client
+    Determines the GitHub event type and processes the issue or comment accordingly.
+    """
+    check_all = get_env_var(
+        "INPUT_CHECK_ALL",
+        required=False,
+        cast_func=lambda v: str(v).strip().lower() in ["1", "true", "yes"],
+        default=False,
+    )
+    github_event_name = get_env_var("INPUT_GITHUB_EVENT_NAME")
+    github_issue_id = get_env_var("INPUT_GITHUB_ISSUE_ID", cast_func=int)
+    github_token = get_env_var("INPUT_GITHUB_TOKEN")
 
-    def process_issue(self, issue_content, repository, issue_number):
-        self.logger.info(f"Processing issue {issue_number} in repository {repository}")
+    repository = get_env_var("GITHUB_REPOSITORY")
 
-        # Classify the issue content
-        parsed_result, reply = classify_workitem(issue_content)
-        self.logger.info(f"Issue classification: {reply}")
+    if github_event_name not in [e.value for e in GithubEvent]:
+        print(f"Error: Unsupported GitHub event: {github_event_name}", file=sys.stderr)
+        sys.exit(1)
 
-        # Generate a comment based on the classification
-        comment = self.generate_comment(parsed_result)
-        self.logger.info(f"Generated comment: {comment}")
+    github_issue = get_github_issue(
+        token=github_token, repository=repository, issue_id=github_issue_id
+    )
 
-        # Post the comment to the issue
-        # self.post_comment(repository, issue_number, json.dumps(parsed_result))
-        self.post_comment(repository, issue_number, comment)
+    if check_all and has_label(github_issue, GithubLabel.VTPM_IGNORE.value):
+        print(
+            f"Issue {github_issue_id} is ignored due to label {GithubLabel.VTPM_IGNORE.value}."
+        )
+        return
 
-        # Add labels based on the analysis
-        if 'classification' in parsed_result:
-            self.logger.info(f"Adding label: {parsed_result['classification']}")
-            self.add_labels(repository, issue_number, parsed_result['classification'])
+    if not check_all and not has_label(github_issue, GithubLabel.VTPM_REVIEW.value):
+        print(
+            f"Issue {github_issue_id} does not require review due to missing label {GithubLabel.VTPM_REVIEW.value}."
+        )
+        return
 
-        return parsed_result.get("classification", "Unknown")
-        # return "Issue processed successfully"
+    print(f"Processing issue: {github_issue.title}")
+    print(f"Event Name: {github_event_name}")
 
-    def generate_comment(self, parsed_result):
-        comment = "Thank you for this issue!\n\n"
-        comment += "## Analysis Results\n\n"
-        comment += f"- **ClassificationType**: {parsed_result['classification']}\n"
-        comment += f"- **Explanation**: {parsed_result['explanation']}\n"
-        if 'priority' in parsed_result:
-            comment += f"- **Priority**: {parsed_result['priority']}\n"
-        comment += "\n## Next Steps\n\n"
+    if github_event_name == GithubEvent.ISSUE.value:
 
-        if parsed_result['classification'].lower() == "bug":
-            comment += "This appears to be a bug report. The development team will:\n"
-            comment += "1. Review the issue details\n"
-            comment += "2. Reproduce the issue if possible\n"
-            comment += "3. Investigate the root cause\n"
-            comment += "4. Provide a fix or workaround\n"
-        elif parsed_result['classification'].lower() == "feature":
-            comment += "This appears to be a feature request. The team will:\n"
-            comment += "1. Evaluate the request against project goals\n"
-            comment += "2. Assess implementation complexity\n"
-            comment += "3. Consider adding it to the roadmap\n"
-            comment += "4. Provide feedback on feasibility\n"
-        else:
-            comment += "This appears to be a question or general issue. The team will:\n"
-            comment += "1. Review the details provided\n"
-            comment += "2. Provide clarification or guidance\n"
-            comment += "3. Update documentation if needed\n"
+        azure_openai_target_uri = get_env_var("INPUT_AZURE_OPENAI_TARGET_URI")
+        azure_openai_api_key = get_env_var("INPUT_AZURE_OPENAI_API_KEY")
 
-        return comment
+        kernel = initialize_kernel(
+            azure_openai_target_uri=azure_openai_target_uri,
+            azure_openai_api_key=azure_openai_api_key,
+        )
+
+        handle_github_issues_event(github_issue, kernel)
+
+    elif github_event_name == GithubEvent.ISSUE_COMMENT.value:
+
+        github_issue_comment_id = get_env_var(
+            "INPUT_GITHUB_ISSUE_COMMENT_ID",
+            cast_func=int,
+        )
     
-    def add_labels(self, repository, issue_number, classification):
-        owner, repo = repository.split('/')
-        issue = self.github_client.get_repo(f"{owner}/{repo}").get_issue(number=issue_number)
-        issue.add_to_labels(classification)
-        self.logger.info("Added Labels successfully")
+        handle_github_comment_event(github_issue, github_issue_comment_id)
 
-    def post_comment(self, repository, issue_number, comment):
-        self.logger.info(f"Posting comment to issue {issue_number} in repository {repository}")
-        issue = self.github_client.get_repo(f"{repository}").get_issue(number=issue_number)
-        issue.create_comment(comment)
-        # issue.add_to_labels("bug", "enhancement")
-        self.logger.info("Comment posted successfully")
+    else:
+        print(f"Unsupported GitHub event: {github_event_name}", file=sys.stderr)
+        sys.exit(1)
+
 
 if __name__ == "__main__":
-    # Load configuration
-    logging.basicConfig(level=logging.INFO)
-    logger = logging.getLogger("AI Workflow Agent")
-
-    # Read environment variables
-    issue_content = os.getenv("INPUT_ISSUE_CONTENT", "")
-    github_token = os.getenv("INPUT_GITHUB_TOKEN", "")
-    repository = os.getenv("INPUT_REPOSITORY", "")
-    issue_number = os.getenv("INPUT_ISSUE_NUMBER", "")
-
-
-    if not all([issue_content, github_token, repository, issue_number]):
-        logger.error("Missing required environment variables")
-        exit(1)
-
-    try:
-        github_client = Github(github_token)
-        agent = IssueProcessingAgent(logger, github_client)
-        result = agent.process_issue(issue_content, repository, int(issue_number))
-        logger.info(result)
-    except Exception as e:
-        logger.error(f"Error occurred: {e}")
-        exit(1)
+    main()

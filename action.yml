@@ -1,50 +1,41 @@
-name: 'Python Action'
-description: 'A Python-based action for AI Workflow Agent'
-author: 'Swetha Anand'
+name: 'TPM Repo Agent'
+description: 'An AI-powered GitHub Action that enhances issue descriptions, comments, and labels using Semantic Kernel and Azure OpenAI.'
+author: 'Team Sparkify'
 
-inputs:
-  issue_content:
-    description: 'The content of the GitHub issue to process'
-    required: true
-  github_token:
-    description: 'GitHub token for API access'
-    required: true
-  repository:
-    description: 'Repository in the format owner/repo'
-    required: true
-  issue_number:
-    description: 'Issue number to comment on'
-    required: true
-  azure_openai_api_type:
-    description: 'Azure OpenAI API type (default: azure)'
-    required: false
-    default: 'azure'
-  azure_openai_key:
-    description: 'Azure OpenAI API key'
-    required: false
-  azure_openai_endpoint:
-    description: 'Azure OpenAI API endpoint'
-    required: false
-  azure_openai_api_version:
-    description: 'Azure OpenAI API version'
-    required: false
-    default: '2024-02-15-preview'
-  azure_openai_deployment:
-    description: 'Azure OpenAI deployment name'
-    required: false
-    default: 'gpt-35-turbo'
-outputs:
-  result:
-    description: 'Result of the operation'
-  status:
-    description: 'Status of the operation'
+branding:
+  icon: 'shield'
+  color: 'blue'
 
 runs:
   using: 'docker'
   image: 'Dockerfile'
 
+inputs:
+  check_all:
+    description: 'Whether to check all issues (true/false)'
+    required: false
+  github_event_name:
+    description: 'Name of the GitHub event that triggered the action'
+    required: true
+  github_issue_id:
+    description: 'Unique ID of the GitHub issue'
+    required: true
+  github_token:
+    description: 'GitHub token with repo access'
+    required: true
+  github_issue_comment_id:
+    description: 'GitHub comment id'
+    required: true
+  azure_openai_target_uri:
+    description: 'Azure OpenAI target URI'
+    required: true
+  azure_openai_api_key:
+    description: 'API key for Azure OpenAI'
+    required: true
+  repository:
+    description: 'GitHub repository name (owner/repo)'
+    required: true
 
-
-branding:
-  icon: 'shield'
-  color: 'blue'
+outputs:
+  status:
+    description: 'Status of the operation'
