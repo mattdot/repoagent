@@ -143,7 +143,7 @@ jobs:
               -e INPUT_REPOSITORY="<owner/repo>" \
               -e INPUT_ISSUE_NUMBER="<issue_number>" \
               -e INPUT_AZURE_OPENAI_ENDPOINT="<Azure OpenAI Endpoint>" \
-              -e `INPUT_AZURE_OPENAI_DEPLOYMENT="<Azure OpenAI Deployment>" \
+              -e INPUT_AZURE_OPENAI_DEPLOYMENT="<Azure OpenAI Deployment>" \
               -e INPUT_AZURE_OPENAI_API_VERSION="<Azure OpenAI Version>" \
               -e INPUT_AZURE_OPENAI_KEY="<Azure OpenAI Key>" \
               -e INPUT_AZURE_OPENAI_TYPE="<Azure OpenAI Type>" \
