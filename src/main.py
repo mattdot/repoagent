@@ -4,6 +4,7 @@ import asyncio
 # Third-party imports
 from github.Issue import Issue
 from semantic_kernel import Kernel
+from comment_commands import CommentCommand
 
 # Local imports
 from github_utils import (
@@ -21,7 +22,6 @@ from prompts import build_user_story_eval_prompt
 from utils import get_env_var
 from response_models import UserStoryEvalResponse
 
-COMMENT_LOOKUP = "/apply"
 
 def handle_github_issues_event(issue: Issue, kernel: Kernel) -> None:
     """
@@ -46,43 +46,54 @@ def handle_github_issues_event(issue: Issue, kernel: Kernel) -> None:
 
 def handle_github_comment_event(issue: Issue, issue_comment_id: int) -> None:
     """
-    Apply AI-suggested enhancements to a GitHub issue if requested in a comment.
+    Apply AI-suggested enhancements to a GitHub issue, or trigger a re-review if requested in a comment.
 
     Args:
         issue (Issue): The GitHub issue to update.
-        issue_comment_id (int): The ID of the comment triggering the enhancement.
+        issue_comment_id (int): The ID of the comment triggering the enhancement or review.
     """
     comment = get_github_comment(issue, issue_comment_id)
+    comment_body = comment.body.strip().lower()
 
-    if COMMENT_LOOKUP not in comment.body:
+    if CommentCommand.APPLY in comment_body:
+        ai_enhanced_comment = get_ai_enhanced_comment(issue)
+        if ai_enhanced_comment is None:
+            return
+
+        user_story_eval = UserStoryEvalResponse.from_markdown(ai_enhanced_comment)
+
+        update_github_issue(
+            issue,
+            title=user_story_eval.refactored.title,
+            body=user_story_eval.refactored.body_markdown(),
+            labels=user_story_eval.labels,
+        )
+
+        quoted_body = "\n".join([f"> {line}" for line in user_story_eval.to_markdown().strip().splitlines()])
+        confirmation_comment = (
+            f"✅ Applied enhancements based on the following comment:\n\n"
+            f"{quoted_body}"
+        )
+
+        create_github_issue_comment(issue, confirmation_comment)
+
+    elif CommentCommand.REVIEW in comment_body:
+        print(f"Triggering manual review for issue {issue.number}...")
+
+        # Initialize the kernel
+        azure_openai_target_uri = get_env_var("INPUT_AZURE_OPENAI_TARGET_URI")
+        azure_openai_api_key = get_env_var("INPUT_AZURE_OPENAI_API_KEY")
+
+        kernel = initialize_kernel(
+            azure_openai_target_uri=azure_openai_target_uri,
+            azure_openai_api_key=azure_openai_api_key,
+        )
+
+        handle_github_issues_event(issue, kernel)
+
+    else:
         print(f"Comment {issue_comment_id} does not require processing.")
-        return
 
-    ai_enhanced_comment = get_ai_enhanced_comment(issue)
-
-    if ai_enhanced_comment is None:
-        return
-
-    user_story_eval = UserStoryEvalResponse.from_markdown(ai_enhanced_comment)
-
-    update_github_issue(
-        issue,
-        title=user_story_eval.refactored.title,
-        body=user_story_eval.refactored.body_markdown(),
-        labels=user_story_eval.labels,
-    )
-
-    quoted_body = "\n".join([f"> {line}" for line in user_story_eval.to_markdown().strip().splitlines()])
-
-    # Confirmation comment quoting the original enhancement comment
-    confirmation_comment = (
-        f"✅ Applied enhancements based on the following comment:\n\n"
-        f"{quoted_body}"
-    )
-
-    create_github_issue_comment(
-        issue, confirmation_comment
-    )
 
 
 def main() -> None:
