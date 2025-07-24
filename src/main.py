@@ -15,7 +15,6 @@ from github_utils import (GithubEvent, create_github_issue_comment,
 from openai_utils import initialize_kernel, run_completion
 from prompts import build_user_story_eval_prompt
 from response_models import UserStoryEvalResponse
-from utils import quote_markdown_lines
 
 
 async def handle_github_issues_event(issue: Issue, kernel: Kernel) -> None:
