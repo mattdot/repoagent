@@ -242,4 +242,5 @@ class UserStoryEvalResponse:
             lines.append("\n### Refactored Story")
             lines.append(self.refactored.to_markdown())
             lines.append("\n Reply \"/apply\" to apply these updates.\n")
+            lines.append("\n Reply \"/review\" to re-review this issue.\n")
         return "\n".join(lines)

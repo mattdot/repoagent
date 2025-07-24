@@ -128,7 +128,7 @@ This action supports the following GitHub workflow events:
   - Used to analyze and enhance new or updated issues.
 - **issue_comment**
   - Triggered on issue comment events such as `created`.
-  - Used to apply enhancements when a user comments with a specific command (e.g., `/apply`).
+  - Used to apply enhancements when a user comments with a specific command (e.g., `/apply`, `/review`).
 
 Example configuration in your workflow:
 
