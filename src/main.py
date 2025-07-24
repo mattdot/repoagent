@@ -4,6 +4,7 @@ import asyncio
 # Third-party imports
 from github.Issue import Issue
 from semantic_kernel import Kernel
+from comment_commands import CommentCommand
 
 # Local imports
 from github_utils import (
@@ -21,8 +22,6 @@ from prompts import build_user_story_eval_prompt
 from utils import get_env_var
 from response_models import UserStoryEvalResponse
 
-APPLY_COMMENT = "/apply"
-REVIEW_COMMENT = "/review"
 
 def handle_github_issues_event(issue: Issue, kernel: Kernel) -> None:
     """
@@ -56,7 +55,7 @@ def handle_github_comment_event(issue: Issue, issue_comment_id: int) -> None:
     comment = get_github_comment(issue, issue_comment_id)
     comment_body = comment.body.strip().lower()
 
-    if APPLY_COMMENT in comment_body:
+    if CommentCommand.APPLY in comment_body:
         ai_enhanced_comment = get_ai_enhanced_comment(issue)
         if ai_enhanced_comment is None:
             return
@@ -78,7 +77,7 @@ def handle_github_comment_event(issue: Issue, issue_comment_id: int) -> None:
 
         create_github_issue_comment(issue, confirmation_comment)
 
-    elif REVIEW_COMMENT in comment_body:
+    elif CommentCommand.REVIEW in comment_body:
         print(f"Triggering manual review for issue {issue.number}...")
 
         # Initialize the kernel

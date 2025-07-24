@@ -128,7 +128,7 @@ This action supports the following GitHub workflow events:
   - Used to analyze and enhance new or updated issues.
 - **issue_comment**
   - Triggered on issue comment events such as `created`.
-  - Used to apply enhancements when a user comments with a specific command (e.g., `/apply`, `/review`).
+  - Used to apply enhancements when a user comments with a specific command (e.g., `/apply`)
 
 Example configuration in your workflow:
 
@@ -141,6 +141,16 @@ on:
 ```
 
 See the [GitHub Actions documentation](https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows) for more details on workflow events and triggers.
+
+## Supported Commands
+
+### 🚀 Available Commands
+
+| Command     | Functionality                                                | Notes                                                                 |
+|-------------|--------------------------------------------------------------|-----------------------------------------------------------------------|
+| `/apply`    | Applies the latest AI-enhanced title, body, and labels to the GitHub issue. | Must be used as a GitHub comment on an issue with a valid enhancement suggestion. |
+| `/review`   | Triggers a new AI review of the issue and posts the updated evaluation as a comment. | Does not update the issue directly; useful for iterative refinement or rechecks. |
+
 
 ## Contributing
 
