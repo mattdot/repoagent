@@ -1,42 +1,36 @@
 import os
-import sys
 
-from typing import Callable, Any
+from typing import Callable, Any, Optional
 
 def get_env_var(
-    name: str,
-    required: bool = True,
-    cast_func: Callable[..., Any] = None,
-    default=None,
-    error_message: str = None,
+    key: str,
+    default: Any = None,
+    cast_func: Optional[Callable[[str], Any]] = None,
+    required: bool = True
 ) -> Any:
     """
-    Retrieve and validate an environment variable, with optional type casting and default value.
+    Retrieve an environment variable with optional casting and default value management.
 
     Args:
-        name (str): Environment variable name.
-        required (bool): Whether the variable is required. Defaults to True.
-        cast_func (callable, optional): Function to cast the value. Defaults to None.
-        default: Default value if variable is not set. Defaults to None.
-        error_message (str, optional): Custom error message if variable is missing. Defaults to None.
+        key (str): The environment variable name.
+        default (Any, optional): Default value if variable is not set. Defaults to None.
+        cast_func (Callable[[str], Any], optional): Function to cast the value. Defaults to None.
+        required (bool, optional): Whether the variable is required. Defaults to True.
 
     Returns:
-        any: The environment variable value, possibly casted.
+        Any: The value of the environment variable, cast if specified.
 
     Raises:
-        SystemExit: If required variable is missing or casting fails.
+        ValueError: If required variable is missing or casting fails.
     """
-    value = os.getenv(name, default)
-    if required and (value is None or value == ""):
-        msg = error_message or f"Error: Missing required environment variable: {name}"
-        print(msg, file=sys.stderr)
-        sys.exit(1)
-    if cast_func and value is not None:
+    val = os.getenv(key)
+    if val is None or val == "":
+        if required:
+            raise ValueError(f"Missing required environment variable: {key}")
+        return default
+    if cast_func:
         try:
-            value = cast_func(value)
-        except Exception as e:
-            print(
-                f"Error: Could not cast {name} to required type: {e}", file=sys.stderr
-            )
-            sys.exit(1)
-    return value
+            return cast_func(val)
+        except Exception:
+            raise ValueError(f"Invalid value for environment variable '{key}': could not cast '{val}'")
+    return val

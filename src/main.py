@@ -6,6 +6,7 @@ from github.Issue import Issue
 from semantic_kernel import Kernel
 
 # Local imports
+from config import Config
 from github_utils import (
     GithubEvent,
     GithubLabel,
@@ -18,7 +19,6 @@ from github_utils import (
 )
 from openai_utils import initialize_kernel, run_completion
 from prompts import build_user_story_eval_prompt
-from utils import get_env_var
 from response_models import UserStoryEvalResponse
 
 COMMENT_LOOKUP = "/apply"
@@ -91,65 +91,48 @@ def main() -> None:
 
     Determines the GitHub event type and processes the issue or comment accordingly.
     """
-    check_all = get_env_var(
-        "INPUT_CHECK_ALL",
-        required=False,
-        cast_func=lambda v: str(v).strip().lower() in ["1", "true", "yes"],
-        default=False,
-    )
-    github_event_name = get_env_var("INPUT_GITHUB_EVENT_NAME")
-    github_issue_id = get_env_var("INPUT_GITHUB_ISSUE_ID", cast_func=int)
-    github_token = get_env_var("INPUT_GITHUB_TOKEN")
 
-    repository = get_env_var("GITHUB_REPOSITORY")
-
-    if github_event_name not in [e.value for e in GithubEvent]:
-        print(f"Error: Unsupported GitHub event: {github_event_name}", file=sys.stderr)
-        sys.exit(1)
+    config = Config()
 
     github_issue = get_github_issue(
-        token=github_token, repository=repository, issue_id=github_issue_id
+        token=config.github.token, repository=config.github.repository, issue_id=config.github.issue_id
     )
 
-    if check_all and has_label(github_issue, GithubLabel.VTPM_IGNORE.value):
+    if config.check_all and has_label(github_issue, GithubLabel.VTPM_IGNORE.value):
         print(
-            f"Issue {github_issue_id} is ignored due to label {GithubLabel.VTPM_IGNORE.value}."
+            f"Issue {config.github.issue_id} is ignored due to label {GithubLabel.VTPM_IGNORE.value}."
         )
         return
 
-    if not check_all and not has_label(github_issue, GithubLabel.VTPM_REVIEW.value):
+    if not config.check_all and not has_label(github_issue, GithubLabel.VTPM_REVIEW.value):
         print(
-            f"Issue {github_issue_id} does not require review due to missing label {GithubLabel.VTPM_REVIEW.value}."
+            f"Issue {config.github.issue_id} does not require review due to missing label {GithubLabel.VTPM_REVIEW.value}."
         )
         return
 
     print(f"Processing issue: {github_issue.title}")
-    print(f"Event Name: {github_event_name}")
+    print(f"Event Name: {config.github.event_name}")
 
-    if github_event_name == GithubEvent.ISSUE.value:
+    event_handlers = {
+        GithubEvent.ISSUE.value: lambda: handle_github_issues_event(
+            github_issue,
+            initialize_kernel(
+                azure_openai_target_uri=config.openai.azure_openai_target_uri,
+                azure_openai_api_key=config.openai.azure_openai_api_key,
+            ),
+        ),
 
-        azure_openai_target_uri = get_env_var("INPUT_AZURE_OPENAI_TARGET_URI")
-        azure_openai_api_key = get_env_var("INPUT_AZURE_OPENAI_API_KEY")
+        GithubEvent.ISSUE_COMMENT.value: lambda: handle_github_comment_event(
+            github_issue, config.github.issue_comment_id
+        ),
+    }
 
-        kernel = initialize_kernel(
-            azure_openai_target_uri=azure_openai_target_uri,
-            azure_openai_api_key=azure_openai_api_key,
-        )
-
-        handle_github_issues_event(github_issue, kernel)
-
-    elif github_event_name == GithubEvent.ISSUE_COMMENT.value:
-
-        github_issue_comment_id = get_env_var(
-            "INPUT_GITHUB_ISSUE_COMMENT_ID",
-            cast_func=int,
-        )
-    
-        handle_github_comment_event(github_issue, github_issue_comment_id)
-
+    handler = event_handlers.get(config.github.event_name)
+    if handler:
+        handler()
     else:
-        print(f"Unsupported GitHub event: {github_event_name}", file=sys.stderr)
-        sys.exit(1)
+        print(f"Unsupported event: {config.github.event_name}")
+
 
 
 if __name__ == "__main__":
