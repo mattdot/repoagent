@@ -241,6 +241,6 @@ class UserStoryEvalResponse:
         if self.refactored and (not self.ready_to_work and not self.base_story_not_clear):
             lines.append("\n### Refactored Story")
             lines.append(self.refactored.to_markdown())
-            lines.append('\n Reply with "/apply" to apply these updates, or "/review" to trigger another review of the story.\n')
+            lines.append('\n Reply with `/apply` to accept these changes, or `/review` to run another evaluation.\n')
 
         return "\n".join(lines)
