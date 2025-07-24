@@ -114,7 +114,7 @@ def main() -> None:
     print(f"Event Name: {config.github.event_name}")
 
     event_handlers = {
-        GithubEvent.ISSUE.value: lambda: handle_github_issues_event(
+        GithubEvent.ISSUE: lambda: handle_github_issues_event(
             github_issue,
             initialize_kernel(
                 azure_openai_target_uri=config.openai.azure_openai_target_uri,
@@ -122,7 +122,7 @@ def main() -> None:
             ),
         ),
 
-        GithubEvent.ISSUE_COMMENT.value: lambda: handle_github_comment_event(
+        GithubEvent.ISSUE_COMMENT: lambda: handle_github_comment_event(
             github_issue, config.github.issue_comment_id
         ),
     }
