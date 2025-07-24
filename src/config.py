@@ -25,20 +25,16 @@ class GitHubConfig:
                 f"Invalid event name: {event_name_str}. Must be one of {[e.value for e in GithubEvent]}"
             )
 
-        self.issue_id: Optional[int] = get_env_var(
+        self.issue_id: int = get_env_var(
             "INPUT_GITHUB_ISSUE_ID", cast_func=int
         )
         self.token: str = get_env_var("INPUT_GITHUB_TOKEN")
         self.repository: str = get_env_var("GITHUB_REPOSITORY")
 
         if self.event_name == GithubEvent.ISSUE_COMMENT:
-            self.issue_comment_id: Optional[int] = get_env_var(
+            self.issue_comment_id: int = get_env_var(
                 "INPUT_GITHUB_ISSUE_COMMENT_ID", cast_func=int
             )
-            if self.issue_comment_id is None:
-                raise ValueError(
-                    "Missing required environment variable: INPUT_GITHUB_ISSUE_COMMENT_ID for issue_comment event"
-                )
         else:
             self.issue_comment_id: Optional[int] = get_env_var(
                 "INPUT_GITHUB_ISSUE_COMMENT_ID", cast_func=int, required=False
@@ -76,11 +72,11 @@ class Config:
         self.openai = OpenAIConfig()
         self._initialized = True
 
-    def _setattr(self, name: str, value: Any) -> None:
+    def __setattr__(self, name: str, value: Any) -> None:
         """
         Prevents modification of config values after initialization.
         """
-        if hasattr(self, "_initialized") and self._initialized:
+        if hasattr(self, "_initialized") and self._initialized and name != "_initialized":
             raise AttributeError(
                 f"Config is immutable. Cannot modify '{name}' after initialization."
             )
