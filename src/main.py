@@ -53,7 +53,7 @@ async def handle_github_comment_event(
     comment = get_github_comment(issue, issue_comment_id)
     comment_body = comment.body.strip().lower()
 
-    if CommentCommand.APPLY in comment_body:
+    if CommentCommand.APPLY.value in comment_body:
         ai_enhanced_comment = get_ai_enhanced_comment(issue)
         if ai_enhanced_comment is None:
             return
@@ -75,7 +75,7 @@ async def handle_github_comment_event(
 
         create_github_issue_comment(issue, confirmation_comment)
 
-    elif CommentCommand.REVIEW in comment_body:
+    elif CommentCommand.REVIEW.value in comment_body:
         print(f"Triggering manual review for issue {issue.number}...")
 
         await handle_github_issues_event(issue, kernel)
