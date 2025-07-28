@@ -7,11 +7,6 @@ class GithubEvent(Enum):
     ISSUE = "issues"
     ISSUE_COMMENT = "issue_comment"
 
-class GithubLabel(Enum):
-    VSWE_ASSIGN = "vswe-assign"
-    VTPM_REVIEW = "vtpm-review"
-    VTPM_IGNORE = "vtpm-ignore"
-
 def has_label(issue: Issue, label_name: str) -> bool:
     """
     Check if a GitHub issue has a label with the given name (case-insensitive).

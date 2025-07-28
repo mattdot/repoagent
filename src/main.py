@@ -1,29 +1,24 @@
-import sys
 import asyncio
+import sys
 
 # Third-party imports
 from github.Issue import Issue
 from semantic_kernel import Kernel
 from comment_commands import CommentCommand
 
+
 # Local imports
-from github_utils import (
-    GithubEvent,
-    GithubLabel,
-    get_github_issue,
-    get_github_comment,
-    get_ai_enhanced_comment,
-    has_label,
-    create_github_issue_comment,
-    update_github_issue,
-)
+from config import Config
+from comment_commands import CommentCommand
+from github_utils import (GithubEvent, create_github_issue_comment,
+                          get_ai_enhanced_comment, get_github_comment,
+                          get_github_issue, update_github_issue)
 from openai_utils import initialize_kernel, run_completion
 from prompts import build_user_story_eval_prompt
-from utils import get_env_var
 from response_models import UserStoryEvalResponse
 
 
-def handle_github_issues_event(issue: Issue, kernel: Kernel) -> None:
+async def handle_github_issues_event(issue: Issue, kernel: Kernel) -> None:
     """
     Generate an AI-enhanced evaluation for a GitHub issue and post it as a comment.
 
@@ -34,17 +29,21 @@ def handle_github_issues_event(issue: Issue, kernel: Kernel) -> None:
     messages = build_user_story_eval_prompt(issue.title, issue.body)
 
     try:
-        response_text = asyncio.run(run_completion(kernel, messages))
-        response = UserStoryEvalResponse.from_text(response_text).to_markdown()
+        response_text = await run_completion(kernel, messages)
+        response_markdown = UserStoryEvalResponse.from_text(response_text).to_markdown()
 
-        create_github_issue_comment(issue, response)
-        print(f"AI Response for Issue {issue.number} (Markdown):\n\n{response}")
+        create_github_issue_comment(issue, response_markdown)
+        print(
+            f"AI Response for Issue {issue.number} (Markdown):\n\n{response_markdown}"
+        )
     except Exception as e:
         print(f"Error running Azure OpenAI completion: {e}", file=sys.stderr)
         sys.exit(1)
 
 
-def handle_github_comment_event(issue: Issue, issue_comment_id: int) -> None:
+async def handle_github_comment_event(
+    issue: Issue, issue_comment_id: int, kernel: Kernel
+) -> None:
     """
     Apply AI-suggested enhancements to a GitHub issue, or trigger a re-review if requested in a comment.
 
@@ -55,7 +54,7 @@ def handle_github_comment_event(issue: Issue, issue_comment_id: int) -> None:
     comment = get_github_comment(issue, issue_comment_id)
     comment_body = comment.body.strip().lower()
 
-    if CommentCommand.APPLY in comment_body:
+    if CommentCommand.APPLY.value in comment_body:
         ai_enhanced_comment = get_ai_enhanced_comment(issue)
         if ai_enhanced_comment is None:
             return
@@ -77,91 +76,56 @@ def handle_github_comment_event(issue: Issue, issue_comment_id: int) -> None:
 
         create_github_issue_comment(issue, confirmation_comment)
 
-    elif CommentCommand.REVIEW in comment_body:
+    elif CommentCommand.REVIEW.value in comment_body:
         print(f"Triggering manual review for issue {issue.number}...")
 
-        # Initialize the kernel
-        azure_openai_target_uri = get_env_var("INPUT_AZURE_OPENAI_TARGET_URI")
-        azure_openai_api_key = get_env_var("INPUT_AZURE_OPENAI_API_KEY")
-
-        kernel = initialize_kernel(
-            azure_openai_target_uri=azure_openai_target_uri,
-            azure_openai_api_key=azure_openai_api_key,
-        )
-
-        handle_github_issues_event(issue, kernel)
+        await handle_github_issues_event(issue, kernel)
 
     else:
         print(f"Comment {issue_comment_id} does not require processing.")
 
 
-
-def main() -> None:
+async def main() -> None:
     """
     Main entry point for the issue enhancer agent.
 
     Determines the GitHub event type and processes the issue or comment accordingly.
     """
-    check_all = get_env_var(
-        "INPUT_CHECK_ALL",
-        required=False,
-        cast_func=lambda v: str(v).strip().lower() in ["1", "true", "yes"],
-        default=False,
-    )
-    github_event_name = get_env_var("INPUT_GITHUB_EVENT_NAME")
-    github_issue_id = get_env_var("INPUT_GITHUB_ISSUE_ID", cast_func=int)
-    github_token = get_env_var("INPUT_GITHUB_TOKEN")
 
-    repository = get_env_var("GITHUB_REPOSITORY")
-
-    if github_event_name not in [e.value for e in GithubEvent]:
-        print(f"Error: Unsupported GitHub event: {github_event_name}", file=sys.stderr)
-        sys.exit(1)
+    config = Config()
 
     github_issue = get_github_issue(
-        token=github_token, repository=repository, issue_id=github_issue_id
+        token=config.github.token,
+        repository=config.github.repository,
+        issue_id=config.github.issue_id,
     )
 
-    if check_all and has_label(github_issue, GithubLabel.VTPM_IGNORE.value):
-        print(
-            f"Issue {github_issue_id} is ignored due to label {GithubLabel.VTPM_IGNORE.value}."
-        )
-        return
-
-    if not check_all and not has_label(github_issue, GithubLabel.VTPM_REVIEW.value):
-        print(
-            f"Issue {github_issue_id} does not require review due to missing label {GithubLabel.VTPM_REVIEW.value}."
-        )
-        return
-
     print(f"Processing issue: {github_issue.title}")
-    print(f"Event Name: {github_event_name}")
+    print(f"Event Name: {config.github.event_name}")
 
-    if github_event_name == GithubEvent.ISSUE.value:
+    kernel = initialize_kernel(
+        azure_openai_target_uri=config.openai.azure_openai_target_uri,
+        azure_openai_api_key=config.openai.azure_openai_api_key,
+    )
 
-        azure_openai_target_uri = get_env_var("INPUT_AZURE_OPENAI_TARGET_URI")
-        azure_openai_api_key = get_env_var("INPUT_AZURE_OPENAI_API_KEY")
+    event_handlers = {
+        GithubEvent.ISSUE: lambda: handle_github_issues_event(github_issue, kernel),
+        GithubEvent.ISSUE_COMMENT: lambda: handle_github_comment_event(
+            github_issue, config.github.issue_comment_id, kernel
+        ),
+    }
 
-        kernel = initialize_kernel(
-            azure_openai_target_uri=azure_openai_target_uri,
-            azure_openai_api_key=azure_openai_api_key,
-        )
+    handler = event_handlers.get(config.github.event_name)
 
-        handle_github_issues_event(github_issue, kernel)
-
-    elif github_event_name == GithubEvent.ISSUE_COMMENT.value:
-
-        github_issue_comment_id = get_env_var(
-            "INPUT_GITHUB_ISSUE_COMMENT_ID",
-            cast_func=int,
-        )
-    
-        handle_github_comment_event(github_issue, github_issue_comment_id)
-
+    if handler:
+        try:
+            await handler()
+        except Exception as e:
+            print(f"Error during event handling: {e}", file=sys.stderr)
+            sys.exit(1)
     else:
-        print(f"Unsupported GitHub event: {github_event_name}", file=sys.stderr)
-        sys.exit(1)
+        print(f"Handler not defined for event: {config.github.event_name}")
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

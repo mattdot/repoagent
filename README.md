@@ -41,7 +41,7 @@ jobs:
           github_event_name: ${{ github.event_name }}
           github_issue_id: ${{ github.event.issue.number }}
           check_all: false
-          azure_openai_api_key: ${{ secrets.AZURE_OPENAI_KEY }}
+          azure_openai_api_key: ${{ secrets.AZURE_OPENAI_API_KEY }}
           azure_openai_target_uri: ${{ secrets.AZURE_OPENAI_TARGET_URI }}
           github_issue_comment_id: ${{ github.event.comment.id }}
 ```
