@@ -5,10 +5,9 @@ import sys
 from github.Issue import Issue
 from semantic_kernel import Kernel
 
-
 # Local imports
 from config import Config
-from comment_commands import CommentCommand
+from comment_commands import (CommentCommand, get_command_usage_markdown)
 from github_utils import (GithubEvent, create_github_issue_comment,
                           get_ai_enhanced_comment, get_github_comment,
                           get_github_issue, update_github_issue)
@@ -79,7 +78,10 @@ async def handle_github_comment_event(
         print(f"Triggering manual review for issue {issue.number}...")
 
         await handle_github_issues_event(issue, kernel)
-
+    elif CommentCommand.USAGE.value in comment_body:
+        usage_md = get_command_usage_markdown()
+        create_github_issue_comment(issue, f"### 🤖 Available Commands\n\n{usage_md}")
+        print(f"Posted usage information for issue {issue.number}.")
     else:
         print(f"Comment {issue_comment_id} does not require processing.")
 

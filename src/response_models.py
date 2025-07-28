@@ -244,5 +244,6 @@ class UserStoryEvalResponse:
             lines.append("\n Reply `/apply` to apply these changes.\n")
             
         lines.append("\n Reply `/review` to run another evaluation.\n")
+        lines.append("\n Reply `/usage` to see available commands.\n")
 
         return "\n".join(lines)

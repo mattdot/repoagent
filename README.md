@@ -150,6 +150,7 @@ See the [GitHub Actions documentation](https://docs.github.com/en/actions/using-
 |-------------|--------------------------------------------------------------|-----------------------------------------------------------------------|
 | `/apply`    | Applies the latest AI-enhanced title, body, and labels to the GitHub issue. | Must be used as a GitHub comment on an issue with a valid enhancement suggestion. |
 | `/review`   | Triggers a new AI review of the issue and posts the updated evaluation as a comment. | Does not update the issue directly; useful for iterative refinement or rechecks. |
+| `/usage`    | Displays a list of available bot commands with descriptions. | Use this to discover what commands the bot supports. |
 
 
 ## Contributing
