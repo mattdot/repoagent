@@ -1,6 +1,6 @@
 from enum import Enum
 
-class CommentCommand(str, Enum):
+class CommentCommand(Enum):
     APPLY =  "/apply"
     REVIEW = "/review"
     USAGE =  "/usage"
