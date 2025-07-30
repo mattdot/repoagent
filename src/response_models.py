@@ -271,9 +271,11 @@ class UserStoryEvalResponse:
         ]
         if not self.ready_to_work and self.base_story_not_clear:
             lines.append(
-                "\n**❌ Refactored Story could not be provided because the original story"
-                " is unclear or lacks meaningful value. " \
-                "Please rewrite the title and description to clearly explain the story's purpose and value.**"
+                (
+                    "\n**❌ Refactored Story could not be provided because the original story is unclear "
+                    "or lacks meaningful value. Please rewrite the title and description to clearly explain "
+                    "the story's purpose and value.**"
+                )
             )
         if self.refactored and (
             not self.ready_to_work and not self.base_story_not_clear
