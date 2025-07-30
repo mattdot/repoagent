@@ -17,15 +17,16 @@ from prompts import build_user_story_eval_prompt
 from response_models import UserStoryEvalResponse
 
 
-async def handle_github_issues_event(issue: Issue, kernel: Kernel) -> None:
+async def handle_github_issues_event(issue: Issue, kernel: Kernel, is_manual_trigger: bool = False) -> None:
     """
     Generate an AI-enhanced evaluation for a GitHub issue and post it as a comment if not disabled.
 
     Args:
         issue (Issue): The GitHub issue to process.
         kernel (Kernel): The initialized AI kernel for generating responses.
+        is_manual_trigger (bool): Whether this is a manual review request; defaults to False.
     """
-    if is_agent_disabled(issue):
+    if not is_manual_trigger and is_agent_disabled(issue):
         print(f"Skipping automatic review for issue {issue.number} (disabled).")
         return
     
@@ -82,7 +83,7 @@ async def handle_github_comment_event(
     elif CommentCommand.REVIEW.value in comment_body:
         print(f"Triggering manual review for issue {issue.number}...")
 
-        await handle_github_issues_event(issue, kernel)
+        await handle_github_issues_event(issue, kernel, is_manual_review=True)
     elif CommentCommand.USAGE.value in comment_body:
         usage_md = get_command_usage_markdown()
         create_github_issue_comment(issue, f"### 🤖 Available Commands\n\n{usage_md}")
