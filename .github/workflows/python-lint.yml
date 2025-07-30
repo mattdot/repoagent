@@ -22,12 +22,12 @@ jobs:
       - name: Run flake8
         run: |
           flake8 src/ --max-line-length=120
-      - name: Run black
-        run: |
-          black --check src/
       - name: Run isort
         run: |
           isort --check-only src/
+      - name: Run black
+        run: |
+          black --check src/
       - name: Check for secrets
         run: |
           detect-secrets scan --all-files

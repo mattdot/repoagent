@@ -6,11 +6,17 @@ from github.Issue import Issue
 from semantic_kernel import Kernel
 
 from comment_commands import CommentCommand, get_command_usage_markdown
+
 # Local imports
 from config import Config
-from github_utils import (GithubEvent, create_github_issue_comment,
-                          get_ai_enhanced_comment, get_github_comment,
-                          get_github_issue, update_github_issue)
+from github_utils import (
+    GithubEvent,
+    create_github_issue_comment,
+    get_ai_enhanced_comment,
+    get_github_comment,
+    get_github_issue,
+    update_github_issue,
+)
 from openai_utils import initialize_kernel, run_completion
 from prompts import build_user_story_eval_prompt
 from response_models import UserStoryEvalResponse
