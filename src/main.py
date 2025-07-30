@@ -87,7 +87,7 @@ async def handle_github_comment_event(
         usage_md = get_command_usage_markdown()
         create_github_issue_comment(issue, f"### 🤖 Available Commands\n\n{usage_md}")
         print(f"Posted usage information for issue {issue.number}.")
-    elif CommentCommand.DISABLE in comment_body:
+    elif CommentCommand.DISABLE.value in comment_body:
         disable_agent_for_issue(issue)
         create_github_issue_comment(
             issue,
