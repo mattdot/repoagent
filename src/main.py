@@ -96,7 +96,7 @@ async def handle_github_comment_event(
                 f"🛑 Automatic reviews disabled for this issue and applied label: **{DISABLED_LABEL}**. "
                 f"Comment `{CommentCommand.REVIEW.value}` to manually trigger future evaluations."
             )
-        )    
+        )
     else:
         print(f"Comment {issue_comment_id} does not require processing.")
 
