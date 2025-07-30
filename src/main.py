@@ -10,7 +10,8 @@ from config import Config
 from comment_commands import (CommentCommand, get_command_usage_markdown)
 from github_utils import (GithubEvent, create_github_issue_comment,
                           get_ai_enhanced_comment, get_github_comment,
-                          get_github_issue, update_github_issue)
+                          get_github_issue, update_github_issue,
+                          DISABLED_LABEL, disable_agent_for_issue, is_agent_disabled)
 from openai_utils import initialize_kernel, run_completion
 from prompts import build_user_story_eval_prompt
 from response_models import UserStoryEvalResponse
@@ -18,12 +19,16 @@ from response_models import UserStoryEvalResponse
 
 async def handle_github_issues_event(issue: Issue, kernel: Kernel) -> None:
     """
-    Generate an AI-enhanced evaluation for a GitHub issue and post it as a comment.
+    Generate an AI-enhanced evaluation for a GitHub issue and post it as a comment if not disabled.
 
     Args:
         issue (Issue): The GitHub issue to process.
         kernel (Kernel): The initialized AI kernel for generating responses.
     """
+    if is_agent_disabled(issue):
+        print(f"Skipping automatic review for issue {issue.number} (disabled).")
+        return
+    
     messages = build_user_story_eval_prompt(issue.title, issue.body)
 
     try:
@@ -82,6 +87,15 @@ async def handle_github_comment_event(
         usage_md = get_command_usage_markdown()
         create_github_issue_comment(issue, f"### 🤖 Available Commands\n\n{usage_md}")
         print(f"Posted usage information for issue {issue.number}.")
+    elif CommentCommand.DISABLE in comment_body:
+        disable_agent_for_issue(issue)
+        create_github_issue_comment(
+            issue,
+            (
+                f"🛑 Automatic reviews disabled for this issue and applied label: {DISABLED_LABEL}. "
+                f"Comment `{CommentCommand.REVIEW.value}` to manually trigger future evaluations."
+            )
+        )    
     else:
         print(f"Comment {issue_comment_id} does not require processing.")
 

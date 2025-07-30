@@ -3,10 +3,19 @@ from github import Github
 from github.Issue import Issue
 import sys
 
+DISABLED_LABEL = "agent disabled"
+
 class GithubEvent(Enum):
     ISSUE = "issues"
     ISSUE_COMMENT = "issue_comment"
 
+def is_agent_disabled(issue: Issue) -> bool:
+    return any(label.name == DISABLED_LABEL for label in issue.labels)
+
+def disable_agent_for_issue(issue: Issue):
+    if not is_agent_disabled(issue):
+        issue.add_to_labels(DISABLED_LABEL)
+        
 def has_label(issue: Issue, label_name: str) -> bool:
     """
     Check if a GitHub issue has a label with the given name (case-insensitive).
