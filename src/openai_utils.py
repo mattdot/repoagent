@@ -8,6 +8,7 @@ from semantic_kernel.contents import ChatHistory
 from semantic_kernel.connectors.ai.open_ai import AzureChatPromptExecutionSettings
 from semantic_kernel.functions.kernel_arguments import KernelArguments
 
+
 def parse_azure_openai_uri(target_url: str):
     """
     Parse a full Azure OpenAI chat completions URL and extract endpoint, deployment name, and API version.
@@ -22,13 +23,20 @@ def parse_azure_openai_uri(target_url: str):
         SystemExit: If the URI is malformed or missing required components.
     """
     parsed = urlparse(target_url)
-    endpoint = f"{parsed.scheme}://{parsed.netloc}/" if parsed.scheme and parsed.netloc else None
+    endpoint = (
+        f"{parsed.scheme}://{parsed.netloc}/"
+        if parsed.scheme and parsed.netloc
+        else None
+    )
     match = re.search(r"/deployments/([^/]+)/", parsed.path)
     deployment_name = match.group(1) if match else None
     query = parse_qs(parsed.query)
     api_version = query.get("api-version", [None])[0]
     if not endpoint or not deployment_name or not api_version:
-        print(f"Error: Malformed Azure OpenAI URI or missing required components: {target_url}", file=sys.stderr)
+        print(
+            f"Error: Malformed Azure OpenAI URI or missing required components: {target_url}",
+            file=sys.stderr,
+        )
         sys.exit(1)
     return endpoint, deployment_name, api_version
 
@@ -112,4 +120,3 @@ async def run_completion(kernel: Kernel, messages: List[Dict[str, str]]) -> str:
     )
 
     return result.content
-

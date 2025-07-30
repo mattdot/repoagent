@@ -2,11 +2,12 @@ import os
 
 from typing import Callable, Any, Optional
 
+
 def get_env_var(
     key: str,
     default: Any = None,
     cast_func: Optional[Callable[[str], Any]] = None,
-    required: bool = True
+    required: bool = True,
 ) -> Any:
     """
     Retrieve an environment variable with optional casting and default value management.
@@ -32,5 +33,7 @@ def get_env_var(
         try:
             return cast_func(val)
         except Exception:
-            raise ValueError(f"Invalid value for environment variable '{key}': could not cast '{val}'")
+            raise ValueError(
+                f"Invalid value for environment variable '{key}': could not cast '{val}'"
+            )
     return val

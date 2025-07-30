@@ -25,9 +25,7 @@ class GitHubConfig:
                 f"Invalid event name: {event_name_str}. Must be one of {[e.value for e in GithubEvent]}"
             )
 
-        self.issue_id: int = get_env_var(
-            "INPUT_GITHUB_ISSUE_ID", cast_func=int
-        )
+        self.issue_id: int = get_env_var("INPUT_GITHUB_ISSUE_ID", cast_func=int)
         self.token: str = get_env_var("INPUT_GITHUB_TOKEN")
         self.repository: str = get_env_var("GITHUB_REPOSITORY")
 
@@ -76,7 +74,11 @@ class Config:
         """
         Prevents modification of config values after initialization.
         """
-        if hasattr(self, "_initialized") and self._initialized and name != "_initialized":
+        if (
+            hasattr(self, "_initialized")
+            and self._initialized
+            and name != "_initialized"
+        ):
             raise AttributeError(
                 f"Config is immutable. Cannot modify '{name}' after initialization."
             )

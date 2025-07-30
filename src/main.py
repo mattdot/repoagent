@@ -7,10 +7,15 @@ from semantic_kernel import Kernel
 
 # Local imports
 from config import Config
-from comment_commands import (CommentCommand, get_command_usage_markdown)
-from github_utils import (GithubEvent, create_github_issue_comment,
-                          get_ai_enhanced_comment, get_github_comment,
-                          get_github_issue, update_github_issue)
+from comment_commands import CommentCommand, get_command_usage_markdown
+from github_utils import (
+    GithubEvent,
+    create_github_issue_comment,
+    get_ai_enhanced_comment,
+    get_github_comment,
+    get_github_issue,
+    update_github_issue,
+)
 from openai_utils import initialize_kernel, run_completion
 from prompts import build_user_story_eval_prompt
 from response_models import UserStoryEvalResponse
@@ -66,7 +71,9 @@ async def handle_github_comment_event(
             labels=user_story_eval.labels,
         )
 
-        quoted_body = "\n".join([f"> {line}" for line in user_story_eval.to_markdown().strip().splitlines()])
+        quoted_body = "\n".join(
+            [f"> {line}" for line in user_story_eval.to_markdown().strip().splitlines()]
+        )
         confirmation_comment = (
             f"✅ Applied enhancements based on the following comment:\n\n"
             f"{quoted_body}"
