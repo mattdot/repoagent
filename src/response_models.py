@@ -43,8 +43,8 @@ class UserStoryRefactored:
                 description = line_stripped.split(":", 1)[-1].strip()
             elif line_stripped.startswith("**acceptance criteria**:"):
                 section = "acceptance_criteria"
-            elif section == "acceptance_criteria" and l.startswith("-"):
-                acceptance_criteria.append(l.lstrip("- ").strip())
+            elif section == "acceptance_criteria" and line_stripped.startswith("-"):
+                acceptance_criteria.append(line_stripped.lstrip("- ").strip())
             elif section == "acceptance_criteria" and not line_stripped.startswith("-"):
                 section = None
         return cls(
@@ -271,7 +271,9 @@ class UserStoryEvalResponse:
         ]
         if not self.ready_to_work and self.base_story_not_clear:
             lines.append(
-                "\n**❌ Refactored Story could not be provided because the original story is unclear or lacks meaningful value. Please rewrite the title and description to clearly explain the story's purpose and value.**"
+                "\n**❌ Refactored Story could not be provided because the original story"
+                " is unclear or lacks meaningful value. " \
+                "Please rewrite the title and description to clearly explain the story's purpose and value.**"
             )
         if self.refactored and (
             not self.ready_to_work and not self.base_story_not_clear
