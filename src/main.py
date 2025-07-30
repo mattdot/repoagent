@@ -93,7 +93,7 @@ async def handle_github_comment_event(
         create_github_issue_comment(
             issue,
             (
-                f"🛑 Automatic reviews disabled for this issue and applied label: {DISABLED_LABEL}. "
+                f"🛑 Automatic reviews disabled for this issue and applied label: **{DISABLED_LABEL}**. "
                 f"Comment `{CommentCommand.REVIEW.value}` to manually trigger future evaluations."
             )
         )    
