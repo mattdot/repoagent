@@ -2,10 +2,10 @@
 Centralized configuration and environment variable handling for repoagent.
 """
 
+from typing import Any, Optional
+
 from github_utils import GithubEvent
 from utils import get_env_var
-
-from typing import Any, Optional
 
 
 class GitHubConfig:

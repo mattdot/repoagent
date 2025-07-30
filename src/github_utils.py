@@ -1,7 +1,8 @@
+import sys
 from enum import Enum
+
 from github import Github
 from github.Issue import Issue
-import sys
 
 
 class GithubEvent(Enum):
