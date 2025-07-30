@@ -83,7 +83,7 @@ async def handle_github_comment_event(
     elif CommentCommand.REVIEW.value in comment_body:
         print(f"Triggering manual review for issue {issue.number}...")
 
-        await handle_github_issues_event(issue, kernel, is_manual_review=True)
+        await handle_github_issues_event(issue, kernel, is_manual_trigger=True)
     elif CommentCommand.USAGE.value in comment_body:
         usage_md = get_command_usage_markdown()
         create_github_issue_comment(issue, f"### 🤖 Available Commands\n\n{usage_md}")
