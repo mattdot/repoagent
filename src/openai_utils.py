@@ -4,10 +4,7 @@ from typing import Dict, List
 from urllib.parse import parse_qs, urlparse
 
 from semantic_kernel import Kernel
-from semantic_kernel.connectors.ai.open_ai import (
-    AzureChatCompletion,
-    AzureChatPromptExecutionSettings,
-)
+from semantic_kernel.connectors.ai.open_ai import AzureChatCompletion, AzureChatPromptExecutionSettings
 from semantic_kernel.contents import ChatHistory
 from semantic_kernel.functions.kernel_arguments import KernelArguments
 
@@ -26,11 +23,7 @@ def parse_azure_openai_uri(target_url: str):
         SystemExit: If the URI is malformed or missing required components.
     """
     parsed = urlparse(target_url)
-    endpoint = (
-        f"{parsed.scheme}://{parsed.netloc}/"
-        if parsed.scheme and parsed.netloc
-        else None
-    )
+    endpoint = f"{parsed.scheme}://{parsed.netloc}/" if parsed.scheme and parsed.netloc else None
     match = re.search(r"/deployments/([^/]+)/", parsed.path)
     deployment_name = match.group(1) if match else None
     query = parse_qs(parsed.query)
@@ -44,9 +37,7 @@ def parse_azure_openai_uri(target_url: str):
     return endpoint, deployment_name, api_version
 
 
-def initialize_kernel(
-    azure_openai_target_uri: str, azure_openai_api_key: str
-) -> Kernel:
+def initialize_kernel(azure_openai_target_uri: str, azure_openai_api_key: str) -> Kernel:
     """
     Initialize and return a Semantic Kernel with Azure OpenAI chat completion service.
 
@@ -60,9 +51,7 @@ def initialize_kernel(
     Raises:
         SystemExit: If initialization fails.
     """
-    endpoint, deployment_name, api_version = parse_azure_openai_uri(
-        azure_openai_target_uri
-    )
+    endpoint, deployment_name, api_version = parse_azure_openai_uri(azure_openai_target_uri)
     kernel = Kernel()
     try:
         kernel.add_service(

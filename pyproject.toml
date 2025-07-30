@@ -4,11 +4,3 @@ line_length = 120
 
 [tool.black]
 line-length = 120
-
-[tool.flake8]
-max-line-length = 120
-extend-ignore = [
-    "E203",  # Whitespace before ':', conflicts with Black
-    "W503"   # Line break before binary operator, also Black-aligned
-]
-

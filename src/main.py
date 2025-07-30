@@ -37,17 +37,13 @@ async def handle_github_issues_event(issue: Issue, kernel: Kernel) -> None:
         response_markdown = UserStoryEvalResponse.from_text(response_text).to_markdown()
 
         create_github_issue_comment(issue, response_markdown)
-        print(
-            f"AI Response for Issue {issue.number} (Markdown):\n\n{response_markdown}"
-        )
+        print(f"AI Response for Issue {issue.number} (Markdown):\n\n{response_markdown}")
     except Exception as e:
         print(f"Error running Azure OpenAI completion: {e}", file=sys.stderr)
         sys.exit(1)
 
 
-async def handle_github_comment_event(
-    issue: Issue, issue_comment_id: int, kernel: Kernel
-) -> None:
+async def handle_github_comment_event(issue: Issue, issue_comment_id: int, kernel: Kernel) -> None:
     """
     Apply AI-suggested enhancements to a GitHub issue, or trigger a re-review if requested in a comment.
 
@@ -72,13 +68,8 @@ async def handle_github_comment_event(
             labels=user_story_eval.labels,
         )
 
-        quoted_body = "\n".join(
-            [f"> {line}" for line in user_story_eval.to_markdown().strip().splitlines()]
-        )
-        confirmation_comment = (
-            f"✅ Applied enhancements based on the following comment:\n\n"
-            f"{quoted_body}"
-        )
+        quoted_body = "\n".join([f"> {line}" for line in user_story_eval.to_markdown().strip().splitlines()])
+        confirmation_comment = f"✅ Applied enhancements based on the following comment:\n\n" f"{quoted_body}"
 
         create_github_issue_comment(issue, confirmation_comment)
 

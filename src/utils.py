@@ -32,7 +32,5 @@ def get_env_var(
         try:
             return cast_func(val)
         except Exception:
-            raise ValueError(
-                f"Invalid value for environment variable '{key}': could not cast '{val}'"
-            )
+            raise ValueError(f"Invalid value for environment variable '{key}': could not cast '{val}'")
     return val

@@ -23,10 +23,7 @@ def has_label(issue: Issue, label_name: str) -> bool:
     """
     if not hasattr(issue, "labels") or not isinstance(issue.labels, list):
         return False
-    return any(
-        getattr(label, "name", "").lower() == label_name.lower()
-        for label in issue.labels
-    )
+    return any(getattr(label, "name", "").lower() == label_name.lower() for label in issue.labels)
 
 
 def get_github_issue(token: str, repository: str, issue_id: int) -> Issue:
@@ -89,9 +86,7 @@ def get_ai_enhanced_comment(issue: Issue) -> str:
     """
     for comment in reversed(list(issue.get_comments())):
         if "AI-enhanced Evaluation".lower() in comment.body.lower():
-            print(
-                f"Found AI-enhanced comment in issue #{issue.number} (comment id: {comment.id})."
-            )
+            print(f"Found AI-enhanced comment in issue #{issue.number} (comment id: {comment.id}).")
             return comment.body
     print(f"No AI-enhanced comment found in issue #{issue.number}.")
     return None
@@ -119,15 +114,11 @@ def get_github_comment(issue: Issue, comment_id: int):
                 return comment
         raise Exception(f"Comment with id {comment_id} not found")
     except Exception as e:
-        print(
-            f"Error fetching GitHub comment: {type(e).__name__}: {e}", file=sys.stderr
-        )
+        print(f"Error fetching GitHub comment: {type(e).__name__}: {e}", file=sys.stderr)
         raise
 
 
-def update_github_issue(
-    issue: Issue, title: str = None, body: str = None, labels: list = None
-) -> bool:
+def update_github_issue(issue: Issue, title: str = None, body: str = None, labels: list = None) -> bool:
     """
     Update the title, body, or labels of a GitHub issue.
 

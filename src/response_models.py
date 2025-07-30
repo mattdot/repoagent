@@ -147,11 +147,7 @@ class UserStoryEvalResponse:
             elif line.startswith("Acceptance Criteria Evaluation:"):
                 acceptance_criteria_evaluation = line.split(":", 1)[-1].strip()
             elif line.startswith("Labels:"):
-                labels = [
-                    line_split.strip()
-                    for line_split in line.split(":", 1)[-1].split(",")
-                    if line_split.strip()
-                ]
+                labels = [line_split.strip() for line_split in line.split(":", 1)[-1].split(",") if line_split.strip()]
             elif line.startswith("Ready to Work:"):
                 ready_to_work = extract_bool(line)
             elif line.startswith("Base Story Not Clear:"):
@@ -167,9 +163,7 @@ class UserStoryEvalResponse:
                     refactored_dict["acceptance_criteria"] = []
                 elif line.startswith("-"):
                     if "acceptance_criteria" in refactored_dict:
-                        refactored_dict["acceptance_criteria"].append(
-                            line.lstrip("- ").strip()
-                        )
+                        refactored_dict["acceptance_criteria"].append(line.lstrip("- ").strip())
         return cls(
             summary,
             title_complete,
@@ -212,19 +206,13 @@ class UserStoryEvalResponse:
             elif line.strip().startswith("- Description:"):
                 description_complete = emoji_to_bool(line.split(":", 1)[-1].strip())
             elif line.strip().startswith("- Acceptance Criteria:"):
-                acceptance_criteria_complete = emoji_to_bool(
-                    line.split(":", 1)[-1].strip()
-                )
+                acceptance_criteria_complete = emoji_to_bool(line.split(":", 1)[-1].strip())
             elif line.startswith("**Importance**:"):
                 importance = line.split(":", 1)[-1].strip()
             elif line.startswith("**Acceptance Criteria Evaluation**:"):
                 acceptance_criteria_evaluation = line.split(":", 1)[-1].strip()
             elif line.startswith("**Suggested Labels**:"):
-                labels = [
-                    line_split.strip()
-                    for line_split in line.split(":", 1)[-1].split(",")
-                    if line_split.strip()
-                ]
+                labels = [line_split.strip() for line_split in line.split(":", 1)[-1].split(",") if line_split.strip()]
             elif line.startswith("**Ready to Work**:"):
                 ready_to_work = emoji_to_bool(line.split(":", 1)[-1].strip())
             elif "Base Story Not Clear:" in line:
@@ -235,11 +223,7 @@ class UserStoryEvalResponse:
                 in_refactored = True
             elif in_refactored:
                 refactored_md.append(line)
-        refactored = (
-            UserStoryRefactored.from_markdown("\n".join(refactored_md))
-            if refactored_md
-            else None
-        )
+        refactored = UserStoryRefactored.from_markdown("\n".join(refactored_md)) if refactored_md else None
         return cls(
             summary,
             title_complete,
@@ -277,9 +261,7 @@ class UserStoryEvalResponse:
                     "the story's purpose and value.**"
                 )
             )
-        if self.refactored and (
-            not self.ready_to_work and not self.base_story_not_clear
-        ):
+        if self.refactored and (not self.ready_to_work and not self.base_story_not_clear):
             lines.append("\n### Refactored Story")
             lines.append(self.refactored.to_markdown())
             lines.append("\n Reply `/apply` to apply these changes.\n")
