@@ -1,4 +1,5 @@
 from typing import List, Optional
+import json
 
 
 class UserStoryRefactored:
@@ -111,59 +112,28 @@ class UserStoryEvalResponse:
     @classmethod
     def from_text(cls, text: str):
         """
-        Parse the AI response text and return a UserStoryEvalResponse instance.
+        Parse the AI response text (expected to be JSON) and return a UserStoryEvalResponse instance.
         """
+        try:
+            data = json.loads(text)
+        except Exception as e:
+            raise ValueError(f"Failed to parse JSON from AI response: {e}\nRaw text: {text}")
 
-        # Basic parsing logic (can be improved for edge cases)
-        def extract_bool(line):
-            return line.strip().split(":")[-1].strip().lower() == "true"
-
-        def extract_yesno(line):
-            return line.strip().split(":")[-1].strip().lower() == "yes"
-
-        lines = text.splitlines()
-        summary = ""
-        title_complete = False
-        description_complete = False
-        acceptance_criteria_complete = False
-        importance = ""
-        acceptance_criteria_evaluation = ""
-        labels = []
-        ready_to_work = False
-        base_story_not_clear = False
-        refactored_dict = {}
-        section = None
-        for line in lines:
-            if line.startswith("Summary:"):
-                summary = line.split(":", 1)[-1].strip()
-            elif line.strip().startswith("- Title:"):
-                title_complete = extract_yesno(line)
-            elif line.strip().startswith("- Description:"):
-                description_complete = extract_yesno(line)
-            elif line.strip().startswith("- Acceptance Criteria:"):
-                acceptance_criteria_complete = extract_yesno(line)
-            elif line.startswith("Importance:"):
-                importance = line.split(":", 1)[-1].strip()
-            elif line.startswith("Acceptance Criteria Evaluation:"):
-                acceptance_criteria_evaluation = line.split(":", 1)[-1].strip()
-            elif line.startswith("Labels:"):
-                labels = [line_split.strip() for line_split in line.split(":", 1)[-1].split(",") if line_split.strip()]
-            elif line.startswith("Ready to Work:"):
-                ready_to_work = extract_bool(line)
-            elif line.startswith("Base Story Not Clear:"):
-                base_story_not_clear = extract_bool(line)
-            elif line.startswith("### Refactored Story"):
-                section = "refactored"
-            elif section == "refactored":
-                if line.startswith("Title:"):
-                    refactored_dict["title"] = line.split(":", 1)[-1].strip()
-                elif line.startswith("Description:"):
-                    refactored_dict["description"] = line.split(":", 1)[-1].strip()
-                elif line.startswith("Acceptance Criteria:"):
-                    refactored_dict["acceptance_criteria"] = []
-                elif line.startswith("-"):
-                    if "acceptance_criteria" in refactored_dict:
-                        refactored_dict["acceptance_criteria"].append(line.lstrip("- ").strip())
+        summary = data.get("summary", "")
+        completeness = data.get("completeness", {})
+        title_complete = completeness.get("title", "No").lower() == "yes"
+        description_complete = completeness.get("description", "No").lower() == "yes"
+        acceptance_criteria_complete = completeness.get("acceptance_criteria", "No").lower() == "yes"
+        importance = data.get("importance", "")
+        acceptance_criteria_evaluation = data.get("acceptance_criteria_evaluation", "")
+        labels = data.get("labels", [])
+        ready_to_work = bool(data.get("ready_to_work", False))
+        base_story_not_clear = bool(data.get("base_story_not_clear", False))
+        refactored = None
+        if not ready_to_work and not base_story_not_clear and "refactored_story" in data:
+            refactored = UserStoryRefactored.from_dict(data["refactored_story"])
+        else:
+            refactored = UserStoryRefactored()
         return cls(
             summary,
             title_complete,
@@ -174,7 +144,7 @@ class UserStoryEvalResponse:
             labels,
             ready_to_work,
             base_story_not_clear,
-            UserStoryRefactored.from_dict(refactored_dict),
+            refactored,
         )
 
     @classmethod
