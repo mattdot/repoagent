@@ -14,6 +14,7 @@ class GithubEvent(Enum):
     ISSUE = "issues"
     ISSUE_COMMENT = "issue_comment"
 
+
 def is_agent_disabled(issue: Issue) -> bool:
     """
     Checks if the GitHub issue has a comment containing the disabled marker.
