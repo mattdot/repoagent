@@ -11,7 +11,7 @@ from comment_commands import (CommentCommand, get_command_usage_markdown)
 from github_utils import (GithubEvent, create_github_issue_comment,
                           get_ai_enhanced_comment, get_github_comment,
                           get_github_issue, update_github_issue,
-                          DISABLED_LABEL, disable_agent_for_issue, is_agent_disabled)
+                          DISABLED_MARKER, is_agent_disabled)
 from openai_utils import initialize_kernel, run_completion
 from prompts import build_user_story_eval_prompt
 from response_models import UserStoryEvalResponse
@@ -89,12 +89,12 @@ async def handle_github_comment_event(
         create_github_issue_comment(issue, f"### 🤖 Available Commands\n\n{usage_md}")
         print(f"Posted usage information for issue {issue.number}.")
     elif CommentCommand.DISABLE.value in comment_body:
-        disable_agent_for_issue(issue)
         create_github_issue_comment(
             issue,
             (
-                f"🛑 Automatic reviews disabled for this issue and applied label: **{DISABLED_LABEL}**. "
+                f"🛑 Automatic reviews have been disabled for this issue. "
                 f"Comment `{CommentCommand.REVIEW.value}` to manually trigger future evaluations."
+                f"{DISABLED_MARKER}"
             )
         )
     else:
