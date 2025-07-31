@@ -5,12 +5,14 @@ class CommentCommand(Enum):
     APPLY = "/apply"
     REVIEW = "/review"
     USAGE = "/usage"
+    DISABLE = "/disable"
 
 
 COMMAND_DESCRIPTIONS = {
     CommentCommand.APPLY: "Applies the AI-enhanced title, body, and labels to the issue.",
     CommentCommand.REVIEW: "Re-runs the AI review and posts a fresh evaluation as a comment.",
     CommentCommand.USAGE: "Displays this list of available commands.",
+    CommentCommand.DISABLE: "Disables the repo agent for this issue, preventing further auto reviews.",
 }
 
 
