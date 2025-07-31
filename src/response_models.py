@@ -1,10 +1,17 @@
-from typing import Optional, List
+from typing import List, Optional
+
 
 class UserStoryRefactored:
     """
     Model for the Refactored Story section in the AI response.
     """
-    def __init__(self, title: str = "", description: str = "", acceptance_criteria: Optional[List[str]] = None):
+
+    def __init__(
+        self,
+        title: str = "",
+        description: str = "",
+        acceptance_criteria: Optional[List[str]] = None,
+    ):
         self.title = title
         self.description = description
         self.acceptance_criteria = acceptance_criteria
@@ -29,18 +36,22 @@ class UserStoryRefactored:
         lines = markdown.splitlines()
         section = None
         for line in lines:
-            l = line.strip().lower()
-            if l.startswith("**title**:"):
-                title = l.split(":", 1)[-1].strip()
-            elif l.startswith("**description**:"):
-                description = l.split(":", 1)[-1].strip()
-            elif l.startswith("**acceptance criteria**:"):
+            line_stripped = line.strip().lower()
+            if line_stripped.startswith("**title**:"):
+                title = line_stripped.split(":", 1)[-1].strip()
+            elif line_stripped.startswith("**description**:"):
+                description = line_stripped.split(":", 1)[-1].strip()
+            elif line_stripped.startswith("**acceptance criteria**:"):
                 section = "acceptance_criteria"
-            elif section == "acceptance_criteria" and l.startswith("-"):
-                acceptance_criteria.append(l.lstrip("- ").strip())
-            elif section == "acceptance_criteria" and not l.startswith("-"):
+            elif section == "acceptance_criteria" and line_stripped.startswith("-"):
+                acceptance_criteria.append(line_stripped.lstrip("- ").strip())
+            elif section == "acceptance_criteria" and not line_stripped.startswith("-"):
                 section = None
-        return cls(title=title, description=description, acceptance_criteria=acceptance_criteria)
+        return cls(
+            title=title,
+            description=description,
+            acceptance_criteria=acceptance_criteria,
+        )
 
     def to_markdown(self) -> str:
         """
@@ -67,10 +78,12 @@ class UserStoryRefactored:
                 lines.append(f"- {criterion}")
         return "\n".join(lines)
 
+
 class UserStoryEvalResponse:
     """
     Model for parsing and representing the AI response from the user story evaluation prompt.
     """
+
     def __init__(
         self,
         summary: str,
@@ -100,11 +113,14 @@ class UserStoryEvalResponse:
         """
         Parse the AI response text and return a UserStoryEvalResponse instance.
         """
+
         # Basic parsing logic (can be improved for edge cases)
         def extract_bool(line):
             return line.strip().split(":")[-1].strip().lower() == "true"
+
         def extract_yesno(line):
             return line.strip().split(":")[-1].strip().lower() == "yes"
+
         lines = text.splitlines()
         summary = ""
         title_complete = False
@@ -131,7 +147,7 @@ class UserStoryEvalResponse:
             elif line.startswith("Acceptance Criteria Evaluation:"):
                 acceptance_criteria_evaluation = line.split(":", 1)[-1].strip()
             elif line.startswith("Labels:"):
-                labels = [l.strip() for l in line.split(":", 1)[-1].split(",") if l.strip()]
+                labels = [line_split.strip() for line_split in line.split(":", 1)[-1].split(",") if line_split.strip()]
             elif line.startswith("Ready to Work:"):
                 ready_to_work = extract_bool(line)
             elif line.startswith("Base Story Not Clear:"):
@@ -166,8 +182,10 @@ class UserStoryEvalResponse:
         """
         Parse a markdown string and return a UserStoryEvalResponse instance.
         """
+
         def emoji_to_bool(val: str) -> bool:
             return val.strip() == "✅"
+
         lines = markdown.splitlines()
         summary = ""
         title_complete = False
@@ -194,7 +212,7 @@ class UserStoryEvalResponse:
             elif line.startswith("**Acceptance Criteria Evaluation**:"):
                 acceptance_criteria_evaluation = line.split(":", 1)[-1].strip()
             elif line.startswith("**Suggested Labels**:"):
-                labels = [l.strip() for l in line.split(":", 1)[-1].split(",") if l.strip()]
+                labels = [line_split.strip() for line_split in line.split(":", 1)[-1].split(",") if line_split.strip()]
             elif line.startswith("**Ready to Work**:"):
                 ready_to_work = emoji_to_bool(line.split(":", 1)[-1].strip())
             elif "Base Story Not Clear:" in line:
@@ -222,6 +240,7 @@ class UserStoryEvalResponse:
     def to_markdown(self) -> str:
         def yn_emoji(val: bool) -> str:
             return "✅" if val else "❌"
+
         lines = [
             "### 🤖 **AI-enhanced Evaluation**",
             f"**Summary**: {self.summary}",
@@ -236,13 +255,17 @@ class UserStoryEvalResponse:
         ]
         if not self.ready_to_work and self.base_story_not_clear:
             lines.append(
-                "\n**❌ Refactored Story could not be provided because the original story is unclear or lacks meaningful value. Please rewrite the title and description to clearly explain the story's purpose and value.**"
+                (
+                    "\n**❌ Refactored Story could not be provided because the original story is unclear "
+                    "or lacks meaningful value. Please rewrite the title and description to clearly explain "
+                    "the story's purpose and value.**"
+                )
             )
         if self.refactored and (not self.ready_to_work and not self.base_story_not_clear):
             lines.append("\n### Refactored Story")
             lines.append(self.refactored.to_markdown())
             lines.append("\n Reply `/apply` to apply these changes.\n")
-            
+
         lines.append("\n Reply `/review` to run another evaluation.\n")
         lines.append("\n Reply `/usage` to see available commands.\n")
 

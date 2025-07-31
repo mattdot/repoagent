@@ -1,7 +1,11 @@
+import sys
 from enum import Enum
+
 from github import Github
 from github.Issue import Issue
-import sys
+
+DISABLED_MARKER = "<!-- agent:disabled -->"
+
 
 DISABLED_MARKER = "<!-- agent:disabled -->"
 
@@ -24,7 +28,8 @@ def is_agent_disabled(issue: Issue) -> bool:
         if DISABLED_MARKER in comment.body:
             return True
     return False
-        
+
+
 def has_label(issue: Issue, label_name: str) -> bool:
     """
     Check if a GitHub issue has a label with the given name (case-insensitive).
@@ -39,6 +44,7 @@ def has_label(issue: Issue, label_name: str) -> bool:
     if not hasattr(issue, "labels") or not isinstance(issue.labels, list):
         return False
     return any(getattr(label, "name", "").lower() == label_name.lower() for label in issue.labels)
+
 
 def get_github_issue(token: str, repository: str, issue_id: int) -> Issue:
     """
@@ -78,11 +84,15 @@ def create_github_issue_comment(issue: Issue, comment: str) -> bool:
     """
     try:
         issue.create_comment(comment)
-        
+
         return True
     except Exception as e:
-        print(f"Error creating GitHub issue comment: {type(e).__name__}: {e}", file=sys.stderr)
+        print(
+            f"Error creating GitHub issue comment: {type(e).__name__}: {e}",
+            file=sys.stderr,
+        )
         return False
+
 
 def get_ai_enhanced_comment(issue: Issue) -> str:
     """
@@ -100,6 +110,7 @@ def get_ai_enhanced_comment(issue: Issue) -> str:
             return comment.body
     print(f"No AI-enhanced comment found in issue #{issue.number}.")
     return None
+
 
 def get_github_comment(issue: Issue, comment_id: int):
     """
@@ -125,6 +136,7 @@ def get_github_comment(issue: Issue, comment_id: int):
     except Exception as e:
         print(f"Error fetching GitHub comment: {type(e).__name__}: {e}", file=sys.stderr)
         raise
+
 
 def update_github_issue(issue: Issue, title: str = None, body: str = None, labels: list = None) -> bool:
     """

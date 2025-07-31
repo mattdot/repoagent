@@ -1,12 +1,12 @@
 import os
+from typing import Any, Callable, Optional
 
-from typing import Callable, Any, Optional
 
 def get_env_var(
     key: str,
     default: Any = None,
     cast_func: Optional[Callable[[str], Any]] = None,
-    required: bool = True
+    required: bool = True,
 ) -> Any:
     """
     Retrieve an environment variable with optional casting and default value management.

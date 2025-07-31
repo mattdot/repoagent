@@ -5,13 +5,20 @@ import sys
 from github.Issue import Issue
 from semantic_kernel import Kernel
 
+from comment_commands import CommentCommand, get_command_usage_markdown
+
 # Local imports
 from config import Config
-from comment_commands import (CommentCommand, get_command_usage_markdown)
-from github_utils import (GithubEvent, create_github_issue_comment,
-                          get_ai_enhanced_comment, get_github_comment,
-                          get_github_issue, update_github_issue,
-                          DISABLED_MARKER, is_agent_disabled)
+from github_utils import (
+    DISABLED_MARKER,
+    GithubEvent,
+    create_github_issue_comment,
+    get_ai_enhanced_comment,
+    get_github_comment,
+    get_github_issue,
+    is_agent_disabled,
+    update_github_issue,
+)
 from openai_utils import initialize_kernel, run_completion
 from prompts import build_user_story_eval_prompt
 from response_models import UserStoryEvalResponse
@@ -29,7 +36,6 @@ async def handle_github_issues_event(issue: Issue, kernel: Kernel, is_manual_tri
     if not is_manual_trigger and is_agent_disabled(issue):
         print(f"Skipping automatic review for issue {issue.number} (disabled).")
         return
-    
     messages = build_user_story_eval_prompt(issue.title, issue.body)
 
     try:
@@ -37,17 +43,13 @@ async def handle_github_issues_event(issue: Issue, kernel: Kernel, is_manual_tri
         response_markdown = UserStoryEvalResponse.from_text(response_text).to_markdown()
 
         create_github_issue_comment(issue, response_markdown)
-        print(
-            f"AI Response for Issue {issue.number} (Markdown):\n\n{response_markdown}"
-        )
+        print(f"AI Response for Issue {issue.number} (Markdown):\n\n{response_markdown}")
     except Exception as e:
         print(f"Error running Azure OpenAI completion: {e}", file=sys.stderr)
         sys.exit(1)
 
 
-async def handle_github_comment_event(
-    issue: Issue, issue_comment_id: int, kernel: Kernel
-) -> None:
+async def handle_github_comment_event(issue: Issue, issue_comment_id: int, kernel: Kernel) -> None:
     """
     Apply AI-suggested enhancements to a GitHub issue, or trigger a re-review if requested in a comment.
 
@@ -73,10 +75,7 @@ async def handle_github_comment_event(
         )
 
         quoted_body = "\n".join([f"> {line}" for line in user_story_eval.to_markdown().strip().splitlines()])
-        confirmation_comment = (
-            f"✅ Applied enhancements based on the following comment:\n\n"
-            f"{quoted_body}"
-        )
+        confirmation_comment = f"✅ Applied enhancements based on the following comment:\n\n" f"{quoted_body}"
 
         create_github_issue_comment(issue, confirmation_comment)
 
@@ -95,7 +94,7 @@ async def handle_github_comment_event(
                 f"🛑 Automatic reviews have been disabled for this issue. "
                 f"Comment `{CommentCommand.REVIEW.value}` to manually trigger future evaluations."
                 f"{DISABLED_MARKER}"
-            )
+            ),
         )
     else:
         print(f"Comment {issue_comment_id} does not require processing.")
