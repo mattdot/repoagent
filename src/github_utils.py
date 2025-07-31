@@ -3,10 +3,28 @@ from github import Github
 from github.Issue import Issue
 import sys
 
+DISABLED_MARKER = "<!-- agent:disabled -->"
+
+
 class GithubEvent(Enum):
     ISSUE = "issues"
     ISSUE_COMMENT = "issue_comment"
 
+def is_agent_disabled(issue: Issue) -> bool:
+    """
+    Checks if the GitHub issue has a comment containing the disabled marker.
+
+    Args:
+        issue (Issue): The GitHub issue object.
+
+    Returns:
+        bool: True if the agent is disabled for this issue, False otherwise.
+    """
+    for comment in issue.get_comments():
+        if DISABLED_MARKER in comment.body:
+            return True
+    return False
+        
 def has_label(issue: Issue, label_name: str) -> bool:
     """
     Check if a GitHub issue has a label with the given name (case-insensitive).
