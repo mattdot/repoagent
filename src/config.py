@@ -2,10 +2,10 @@
 Centralized configuration and environment variable handling for repoagent.
 """
 
+from typing import Any, Optional
+
 from github_utils import GithubEvent
 from utils import get_env_var
-
-from typing import Any, Optional
 
 
 class GitHubConfig:
@@ -21,20 +21,14 @@ class GitHubConfig:
         try:
             self.event_name: GithubEvent = GithubEvent(event_name_str)
         except ValueError:
-            raise ValueError(
-                f"Invalid event name: {event_name_str}. Must be one of {[e.value for e in GithubEvent]}"
-            )
+            raise ValueError(f"Invalid event name: {event_name_str}. Must be one of {[e.value for e in GithubEvent]}")
 
-        self.issue_id: int = get_env_var(
-            "INPUT_GITHUB_ISSUE_ID", cast_func=int
-        )
+        self.issue_id: int = get_env_var("INPUT_GITHUB_ISSUE_ID", cast_func=int)
         self.token: str = get_env_var("INPUT_GITHUB_TOKEN")
         self.repository: str = get_env_var("GITHUB_REPOSITORY")
 
         if self.event_name == GithubEvent.ISSUE_COMMENT:
-            self.issue_comment_id: int = get_env_var(
-                "INPUT_GITHUB_ISSUE_COMMENT_ID", cast_func=int
-            )
+            self.issue_comment_id: int = get_env_var("INPUT_GITHUB_ISSUE_COMMENT_ID", cast_func=int)
         else:
             self.issue_comment_id: Optional[int] = get_env_var(
                 "INPUT_GITHUB_ISSUE_COMMENT_ID", cast_func=int, required=False
@@ -65,9 +59,7 @@ class Config:
 
     def __init__(self) -> None:
         self._initialized: bool = False
-        self.check_all: bool = get_env_var(
-            "INPUT_CHECK_ALL", default=False, cast_func=self._cast_bool, required=False
-        )
+        self.check_all: bool = get_env_var("INPUT_CHECK_ALL", default=False, cast_func=self._cast_bool, required=False)
         self.github = GitHubConfig()
         self.openai = OpenAIConfig()
         self._initialized = True
@@ -77,9 +69,7 @@ class Config:
         Prevents modification of config values after initialization.
         """
         if hasattr(self, "_initialized") and self._initialized and name != "_initialized":
-            raise AttributeError(
-                f"Config is immutable. Cannot modify '{name}' after initialization."
-            )
+            raise AttributeError(f"Config is immutable. Cannot modify '{name}' after initialization.")
         super().__setattr__(name, value)
 
     def _cast_bool(self, val: str) -> bool:

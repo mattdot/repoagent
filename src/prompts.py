@@ -1,13 +1,13 @@
-from typing import Dict
+# flake8: noqa: E501
 
 SYSTEM_PROMPT = "You are a helpful assistant that analyzes and improves GitHub issues using natural language."
+
 
 def build_user_story_eval_prompt(issue_title: str, issue_body: str) -> list:
     prompt = (
         f"## GitHub Issue Context\n"
         f"Title: {issue_title}\n"
         f"Body: {issue_body}\n\n"
-
         "## Evaluation Instructions\n"
         "**IMPORTANT: When including the 'Refactored Story' section, you MUST always output all three fields: Title, Description, and Acceptance Criteria. If any field is unchanged, copy it verbatim from the original. Do NOT omit any field, even if unchanged.**\n\n"
         "Assess the issue as a candidate user story for engineering work. Your response must:\n"
@@ -21,13 +21,11 @@ def build_user_story_eval_prompt(issue_title: str, issue_body: str) -> list:
         "   - If not automatable, include a warning and suggest improvements.\n"
         "5. Suggest up to 3 relevant GitHub labels (e.g. 'bug', 'enhancement', 'good first issue'). Format as a comma-separated list.\n"
         "6. Render a Boolean judgment: Is this story 'Ready to Work'? Criteria: all elements present, clear purpose, and testable acceptance criteria.\n\n"
-
         "⚠️ If the title or description is vague, placeholder-like, or lacks meaningful value (e.g. 'Test', 'TBD', 'No update provided'), then:\n"
         "   Base Story Not Clear: True\n"
         "   Ready to Work: False\n"
         "   Skip the 'Refactored Story' section entirely.\n\n"
         "🟢 If Ready to Work is True, also skip the 'Refactored Story' section.\n\n"
-
         "## Expected Response Format\n"
         "### Evaluation\n"
         "Summary: <your insight>\n"
@@ -40,7 +38,6 @@ def build_user_story_eval_prompt(issue_title: str, issue_body: str) -> list:
         "Labels: <comma-separated label list>\n"
         "Ready to Work: <True/False>\n"
         "Base Story Not Clear: <True/False>\n\n"
-
         "### Refactored Story\n"
         "(Include this section only if Ready to Work is False AND Base Story Not Clear is False. Return the *complete* user story, even if only one part required revision. Always include all three components: Title, Description, and Acceptance Criteria.\n"
         "If any component is unchanged, copy it verbatim from the original story. Do not omit any field, even if unchanged.\n"
