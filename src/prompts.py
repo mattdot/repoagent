@@ -22,23 +22,23 @@ def build_user_story_eval_prompt(issue_title: str, issue_body: str) -> list:
         "If base_story_not_clear is True or ready_to_work is True, omit the 'refactored_story' field entirely.\n\n"
         "Example JSON response:\n"
         "{\n"
-        "  \"summary\": \"<your insight>\",\n"
-        "  \"completeness\": {\n"
-        "    \"title\": \"Yes\",\n"
-        "    \"description\": \"Yes\",\n"
-        "    \"acceptance_criteria\": \"No\"\n"
+        '  "summary": "<your insight>",\n'
+        '  "completeness": {\n'
+        '    "title": "Yes",\n'
+        '    "description": "Yes",\n'
+        '    "acceptance_criteria": "No"\n'
         "  },\n"
-        "  \"importance\": \"<why it matters>\",\n"
-        "  \"acceptance_criteria_evaluation\": \"<analysis + any testability warning>\",\n"
-        "  \"labels\": [\"bug\", \"enhancement\"],\n"
-        "  \"ready_to_work\": false,\n"
-        "  \"base_story_not_clear\": false,\n"
-        "  \"refactored_story\": {\n"
-        "    \"title\": \"Refined or original title\",\n"
-        "    \"description\": \"Expanded or original explanation with business value or user need\",\n"
-        "    \"acceptance_criteria\": [\n"
-        "      \"criterion one\",\n"
-        "      \"criterion two\"\n"
+        '  "importance": "<why it matters>",\n'
+        '  "acceptance_criteria_evaluation": "<analysis + any testability warning>",\n'
+        '  "labels": ["bug", "enhancement"],\n'
+        '  "ready_to_work": false,\n'
+        '  "base_story_not_clear": false,\n'
+        '  "refactored_story": {\n'
+        '    "title": "Refined or original title",\n'
+        '    "description": "Expanded or original explanation with business value or user need",\n'
+        '    "acceptance_criteria": [\n'
+        '      "criterion one",\n'
+        '      "criterion two"\n'
         "    ]\n"
         "  }\n"
         "}\n"

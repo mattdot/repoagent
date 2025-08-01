@@ -58,7 +58,7 @@ jobs:
       - name: Run TPM Agent
         env:
           INPUT_CHECK_ALL: 'True'
-          INPUT_GITHUB_EVENT_NAME: ${{ inputs.github_event_name|| github.event_name }}
+          INPUT_GITHUB_EVENT_NAME: ${{ inputs.github_event_name || github.event_name }}
           INPUT_GITHUB_ISSUE_ID: ${{ inputs.github_issue_id || github.event.issue.number }}
           INPUT_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           INPUT_GITHUB_ISSUE_COMMENT_ID: ${{ inputs.github_comment_id || github.event.comment.id }}
