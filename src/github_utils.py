@@ -1,11 +1,6 @@
 import sys
-import requests
 from enum import Enum
-from collections import defaultdict
-import os
-import subprocess
-import re
-from typing import Optional, Tuple, List
+from typing import List, Tuple
 
 from github import Github
 from github.Issue import Issue

@@ -14,11 +14,11 @@ from github_utils import (
     GithubEvent,
     create_github_issue_comment,
     get_ai_enhanced_comment,
+    get_existing_labels,
     get_github_comment,
     get_github_issue,
     is_agent_disabled,
     update_github_issue,
-    get_existing_labels,
 )
 from openai_utils import initialize_kernel, run_completion
 from prompts import build_user_story_eval_prompt
