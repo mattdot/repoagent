@@ -121,7 +121,7 @@ async def main() -> None:
         issue_id=config.github.issue_id,
     )
 
-    existing_labels = get_existing_labels(config.github.token, config.github.repository)
+    existing_labels = get_existing_labels(config.github.repository)
 
     print(f"Existing labels for repository '{config.github.repository}': {existing_labels}")
     print(f"Processing issue: {github_issue.title}")

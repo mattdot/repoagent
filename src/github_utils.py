@@ -165,29 +165,11 @@ def update_github_issue(issue: Issue, title: str = None, body: str = None, label
         return False
 
 
-def get_repo_owner_and_name(repository: str) -> Tuple[str, str]:
-    """
-    Split a full GitHub repository string ('owner/repo') into owner and repo name.
-
-    Args:
-        repository (str): The repository string in 'owner/repo' format.
-
-    Returns:
-        Tuple[str, str]: A tuple containing (owner, repo_name)
-    """
-    try:
-        owner, repo_name = repository.split("/", 1)
-        return owner, repo_name
-    except ValueError:
-        raise ValueError(f"Invalid repository format: '{repository}'. Expected 'owner/repo'.")
-
-
-def get_existing_labels(token: str, repository: str) -> List[str]:
+def get_existing_labels(repository: str) -> List[str]:
     """
     Retrieve all label names defined in a given GitHub repository.
 
     Args:
-        token (str): GitHub access token with permissions to read repository metadata.
         repository (str): The GitHub repository in 'owner/repo' format.
 
     Returns:
@@ -196,7 +178,4 @@ def get_existing_labels(token: str, repository: str) -> List[str]:
     Raises:
         github.GithubException: If the repository cannot be accessed or labels cannot be fetched.
     """
-    owner, repo = get_repo_owner_and_name(repository)
-    github_client = Github(token)
-    repo_obj = github_client.get_repo(f"{owner}/{repo}")
-    return [label.name for label in repo_obj.get_labels()]
+    return [label.name for label in repository.get_labels()]
