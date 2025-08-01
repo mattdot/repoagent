@@ -1,10 +1,6 @@
 name: Test TPM
 
 on:
-  push:
-    branches:
-      - malmiller/update-response-to-be-json
-
   workflow_dispatch:
     inputs:
       github_event_name:
@@ -20,11 +16,6 @@ on:
       github_comment_id:
         description: 'GitHub issue comment ID'
         required: false
-
-  issues:
-    types: [opened, edited]
-  issue_comment:
-    types: [created]
 
 jobs:
   test-tpm-agent:
