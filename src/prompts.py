@@ -3,7 +3,7 @@
 SYSTEM_PROMPT = "You are a helpful assistant that analyzes and improves GitHub issues using natural language. All responses must be valid JSON."
 
 
-def build_user_story_eval_prompt(issue_title: str, issue_body: str) -> list:
+def build_user_story_eval_prompt(issue_title: str, issue_body: str, existing_labels: list[str]) -> list:
     prompt = (
         f"## GitHub Issue Context\n"
         f"Title: {issue_title}\n"
@@ -15,7 +15,9 @@ def build_user_story_eval_prompt(issue_title: str, issue_body: str) -> list:
         "- completeness: An object with keys 'title', 'description', and 'acceptance_criteria', each with values 'Yes' or 'No'.\n"
         "- importance: Why the story matters (business value, user need, technical dependency).\n"
         "- acceptance_criteria_evaluation: Analysis of the acceptance criteria for clarity, specificity, and testability via automation. If not automatable, include a warning and suggest improvements.\n"
-        "- labels: An array of up to 3 relevant GitHub labels (e.g. 'bug', 'enhancement', 'good first issue').\n"
+        "- labels: Choose up to 3 relevant GitHub labels from this list only:\n"
+        f" {existing_labels}\n"
+        "  Do not invent or suggest any labels not in this list.\n"
         "- ready_to_work: Boolean. True if all elements are present, clear purpose, and testable acceptance criteria.\n"
         "- base_story_not_clear: Boolean. True if the title or description is vague, placeholder-like, or lacks meaningful value (e.g. 'Test', 'TBD', 'No update provided').\n"
         "- refactored_story: An object with keys 'title', 'description', and 'acceptance_criteria' (an array of strings). Only include this if ready_to_work is False AND base_story_not_clear is False. If any field is unchanged, copy it verbatim from the original.\n\n"
