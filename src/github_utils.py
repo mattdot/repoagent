@@ -1,6 +1,6 @@
 import sys
 from enum import Enum
-from typing import List, Tuple
+from typing import List
 
 from github import Github
 from github.Issue import Issue
@@ -165,11 +165,12 @@ def update_github_issue(issue: Issue, title: str = None, body: str = None, label
         return False
 
 
-def get_existing_labels(repository: str) -> List[str]:
+def get_existing_labels(token: str, repository: str) -> List[str]:
     """
     Retrieve all label names defined in a given GitHub repository.
 
     Args:
+        token (str): GitHub access token with permissions to read repository metadata.
         repository (str): The GitHub repository in 'owner/repo' format.
 
     Returns:
@@ -178,4 +179,6 @@ def get_existing_labels(repository: str) -> List[str]:
     Raises:
         github.GithubException: If the repository cannot be accessed or labels cannot be fetched.
     """
-    return [label.name for label in repository.get_labels()]
+    github_client = Github(token)
+    repo_obj = github_client.get_repo(repository)
+    return [label.name for label in repo_obj.get_labels()]
