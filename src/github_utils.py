@@ -21,8 +21,10 @@ class GithubEvent(Enum):
 def is_agent_disabled(issue: Issue) -> bool:
     """
     Checks if the GitHub issue has a comment containing the disabled marker.
+
     Args:
         issue (Issue): The GitHub issue object.
+
     Returns:
         bool: True if the agent is disabled for this issue, False otherwise.
     """
@@ -35,9 +37,11 @@ def is_agent_disabled(issue: Issue) -> bool:
 def has_label(issue: Issue, label_name: str) -> bool:
     """
     Check if a GitHub issue has a label with the given name (case-insensitive).
+
     Args:
         issue (Issue): The GitHub issue object.
         label_name (str): The label name to check for.
+
     Returns:
         bool: True if the label exists, False otherwise.
     """
@@ -49,12 +53,15 @@ def has_label(issue: Issue, label_name: str) -> bool:
 def get_github_issue(token: str, repository: str, issue_id: int) -> Issue:
     """
     Fetch a GitHub issue by its ID.
+
     Args:
         token (str): GitHub access token.
         repository (str): Repository in 'owner/name' format.
         issue_id (int): The issue number.
+
     Returns:
         Issue: The fetched GitHub issue object.
+
     Raises:
         SystemExit: If the repository or issue cannot be found or accessed.
     """
@@ -71,9 +78,11 @@ def get_github_issue(token: str, repository: str, issue_id: int) -> Issue:
 def create_github_issue_comment(issue: Issue, comment: str) -> bool:
     """
     Create a comment on a GitHub issue with detailed error reporting.
+
     Args:
         issue (Issue): The GitHub issue object.
         comment (str): The comment text to post.
+
     Returns:
         bool: True if the comment was created successfully, False otherwise.
     """
@@ -91,8 +100,10 @@ def create_github_issue_comment(issue: Issue, comment: str) -> bool:
 def get_ai_enhanced_comment(issue: Issue) -> str:
     """
     Get the AI-enhanced comment from the issue comments.
+
     Args:
         issue (Issue): The GitHub issue object.
+
     Returns:
         str: The content of the AI-enhanced comment, or None if not found.
     """
@@ -107,11 +118,14 @@ def get_ai_enhanced_comment(issue: Issue) -> str:
 def get_github_comment(issue: Issue, comment_id: int):
     """
     Retrieve a specific comment by its ID from a GitHub issue.
+
     Args:
         issue (Issue): The GitHub issue object.
         comment_id (int): The ID of the comment to retrieve.
+
     Returns:
         The comment object if found.
+
     Raises:
         Exception: If the comment is not found or another error occurs.
     """
@@ -130,11 +144,13 @@ def get_github_comment(issue: Issue, comment_id: int):
 def update_github_issue(issue: Issue, title: str = None, body: str = None, labels: list = None) -> bool:
     """
     Update the title, body, or labels of a GitHub issue.
+
     Args:
         issue (Issue): The GitHub issue object.
         title (str, optional): New title for the issue.
         body (str, optional): New body for the issue.
         labels (list, optional): New labels for the issue.
+
     Returns:
         bool: True if the update was successful, False otherwise.
     """
@@ -172,6 +188,19 @@ def get_repo_owner_and_name(repository: str) -> Tuple[str, str]:
 
 
 def get_existing_labels(token: str, repository: str) -> List[str]:
+    """
+    Retrieve all label names defined in a given GitHub repository.
+
+    Args:
+        token (str): GitHub access token with permissions to read repository metadata.
+        repository (str): The GitHub repository in 'owner/repo' format.
+
+    Returns:
+        List[str]: A list of label names (strings) currently defined in the repository.
+
+    Raises:
+        github.GithubException: If the repository cannot be accessed or labels cannot be fetched.
+    """
     owner, repo = get_repo_owner_and_name(repository)
     github_client = Github(token)
     repo_obj = github_client.get_repo(f"{owner}/{repo}")
