@@ -1,5 +1,6 @@
 import sys
 from enum import Enum
+from typing import List
 
 from github import Github
 from github.Issue import Issue
@@ -82,7 +83,6 @@ def create_github_issue_comment(issue: Issue, comment: str) -> bool:
     """
     try:
         issue.create_comment(comment)
-
         return True
     except Exception as e:
         print(
@@ -163,3 +163,22 @@ def update_github_issue(issue: Issue, title: str = None, body: str = None, label
     except Exception as e:
         print(f"Error updating GitHub issue: {type(e).__name__}: {e}", file=sys.stderr)
         return False
+
+
+def get_existing_labels(token: str, repository: str) -> List[str]:
+    """
+    Retrieve all label names defined in a given GitHub repository.
+
+    Args:
+        token (str): GitHub access token with permissions to read repository metadata.
+        repository (str): The GitHub repository in 'owner/repo' format.
+
+    Returns:
+        List[str]: A list of label names (strings) currently defined in the repository.
+
+    Raises:
+        github.GithubException: If the repository cannot be accessed or labels cannot be fetched.
+    """
+    github_client = Github(token)
+    repo_obj = github_client.get_repo(repository)
+    return [label.name for label in repo_obj.get_labels()]
