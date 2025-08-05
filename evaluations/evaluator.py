@@ -33,7 +33,7 @@ azure_ai_project_details = {
 # 1. The Storage should have SAS Enabled: Storage Account > settings > Configuration > Allow storage account key > Enabled
 # 2. The Storage should have IAM added as "Storage Blob Data Contributor" role for the user running this code.(User, Managed Identities: AI Foundry, ML Workspace, etc.)
 # 3. The Connection should be added in the Azure AI Foundry project for the storage account. AI Foundry > Management Center > Connected resource > new connection > Storage account > Account Key type
-# 4. Storage account should have IP added : Storgae account >Security + networking > Networking > Public access > Manage > add ur IP
+# 4. Storage account should have IP added : Storage account >Security + networking > Networking > Public access > Manage > add your IP
 
 results = evaluate(
         evaluation_name="evaluation-repoagent",
