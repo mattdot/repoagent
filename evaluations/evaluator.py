@@ -47,4 +47,4 @@ results = evaluate(
         azure_ai_project=azure_ai_project_details, # if you want results uploaded to AI Foundry
     )
 # pprint(results)
-pprint(f'AI Foundary URL: {results.get("studio_url")}')
+pprint(f'AI Foundry URL: {results.get("studio_url")}')
