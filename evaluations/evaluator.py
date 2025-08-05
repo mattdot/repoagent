@@ -16,6 +16,10 @@ current_dir = Path(__file__).parent
 eval_output_path = current_dir / f"eval-output.json"
 
 endpoint, deployment_name, api_version = parse_azure_openai_uri(get_env_var("INPUT_AZURE_OPENAI_TARGET_URI"))
+subscription_id = get_env_var("INPUT_AZURE_OPENAI_SUBSCRIPTION_ID")
+resource_group_name = get_env_var("INPUT_AZURE_OPENAI_RESOURCE_GROUP_NAME")
+project_name = get_env_var("INPUT_AZURE_OPENAI_PROJECT_NAME")
+project_endpoint = f"{endpoint}/api/projects/{project_name}"
 
 model_config = {
         "azure_deployment": deployment_name,
@@ -23,10 +27,10 @@ model_config = {
         "api_version": api_version,
     }
 azure_ai_project_details = {
-        "subscription_id": get_env_var("INPUT_AZURE_OPENAI_SUBSCRIPTION_ID"),
-        "resource_group_name": get_env_var("INPUT_AZURE_OPENAI_RESOURCE_GROUP_NAME"),
-        "project_name": get_env_var("INPUT_AZURE_OPENAI_PROJECT_NAME"),
-        "project_endpoint": f"{endpoint}/api/projects/{get_env_var('INPUT_AZURE_OPENAI_PROJECT_NAME')}"
+        "subscription_id": subscription_id,
+        "resource_group_name": resource_group_name,
+        "project_name": project_name,
+        "project_endpoint": project_endpoint
     }
 
 # A few things for this to work for storage error
