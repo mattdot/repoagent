@@ -1,6 +1,12 @@
 # Evaluations
 
-This folder contains the `evaluator.py` script, which is used to evaluate AI models and log results to Azure AI Foundry.
+This folder contains the `evaluator.py` script, which evaluates AI agent's prompts using Azure AI Foundry's built-in evaluators. It assesses key aspects such as:
+
+- **Task Adherence**: Measures how well the agent stays on track to complete a given task.
+- **Intent Resolution**: Evaluates the agent's ability to understand and scope the user's intent.
+- **Response Completeness**: Checks if the agent's response is complete and accurate.
+
+These evaluations help ensure the quality and safety of agentic workflows. Refer to the [evaluators](https://learn.microsoft.com/en-us/azure/ai-foundry/concepts/evaluation-evaluators/agent-evaluators) for more information.
 
 ## Prerequisites
 
