@@ -29,7 +29,7 @@ azure_ai_project_details = {
         "project_endpoint": f"{endpoint}/api/projects/{get_env_var('INPUT_AZURE_OPENAI_PROJECT_NAME')}"
     }
 
-# Few things for this to work for storage error
+# A few things for this to work for storage error
 # 1. The Storage should have SAS Enabled: Storage Account > settings > Configuration > Allow storage account key > Enabled
 # 2. The Storage should have IAM added as "Storage Blob Data Contributor" role for the user running this code.(User, Managed Identities: AI Foundry, ML Workspace, etc.)
 # 3. The Connection should be added in the Azure AI Foundry project for the storage account. AI Foundary > Manaement Center > Connected resource > new connection > Storage account > Account Key type
