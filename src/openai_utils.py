@@ -102,7 +102,7 @@ async def run_completion(kernel: Kernel, messages: List[Dict[str, str]]) -> str:
         elif role == "assistant":
             history.add_assistant_message(content)
 
-    settings = AzureChatPromptExecutionSettings()
+    settings = AzureChatPromptExecutionSettings(store=True)
 
     result = await chat_service.get_chat_message_content(
         chat_history=history,
