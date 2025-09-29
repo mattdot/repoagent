@@ -2,24 +2,30 @@
 
 ## Overview
 
-A GitHub Action that uses AI to analyze, evaluate, and improve GitHub issues, transforming them into high-quality user stories ready for engineering work. It leverages Azure OpenAI and Semantic Kernel to provide actionable feedback, suggest labels, and refactor stories for clarity, completeness, and testability.
+An AI-powered GitHub Action that analyzes, evaluates, and (optionally) refactors GitHub issues into high-quality user stories. It uses Azure OpenAI (via Semantic Kernel) to provide structured feedback, suggest existing repository labels, and generate an improved story only when appropriate.
 
-## Features
+## Key Features & Benefits
 
-- **AI-Driven Issue Evaluation:** Summarizes, checks completeness, and judges readiness of issues.
-- **Refactored User Stories:** Suggests improved titles, descriptions, and acceptance criteria when needed.
-- **Label Suggestions:** Recommends up to 3 relevant GitHub labels.
-- **Markdown Round-Trip:** Robust parsing and formatting for seamless GitHub comment updates.
-- **Input Validation:** Ensures all required inputs are present and valid.
-- **Modular Codebase:** Clean separation of concerns for maintainability.
+| Feature | What It Does | Why It Matters |
+|---------|--------------|----------------|
+| Structured AI Evaluation | Produces a concise summary plus completeness flags (title, description, acceptance criteria), importance, and readiness status. | Quickly surfaces gaps so authors know exactly what to improve—reduces reviewer back‑and‑forth. |
+| Context-Aware Refactored Story | Generates an improved title, description, and acceptance criteria only when the original is clear but incomplete. | Avoids noisy rewrites; delivers value-added refinement without overwriting already good work. |
+| Existing Label Suggestions | Suggests up to 3 labels strictly from the repository's current label set. | Ensures consistency with existing taxonomy; prevents accidental creation of near-duplicate labels. |
+| Deterministic Markdown Round‑Trip | Parses its own prior comments and regenerates output safely. | Allows iterative `/review` cycles without formatting drift or duplicated sections. |
+| Command Workflow (`/review`, `/apply`, `/usage`, `/disable`) | Users drive when to re-evaluate, apply changes, view help, or pause automation. | Transparent, reversible control keeps humans in charge of changes to issues. |
+| Safe Disable Mechanism | Embeds a hidden HTML marker to stop future automatic evaluations. | Lightweight opt-out per issue with an easy path to re-enable by removing the marker. |
+| Evaluation Harness (`evaluations/`) | Optional script to score agent output (task adherence, intent resolution, completeness). | Enables data-driven tuning and regression checks for prompt / logic changes. |
+| Minimal Required Inputs | Leverages `GITHUB_REPOSITORY` env and only requires comment ID for comment events. | Reduces configuration errors and speeds adoption. |
+| Immutable Config Layer | Centralized, read-only configuration objects (`config.py`). | Lowers risk of side-effects and simplifies reasoning about runtime behavior. |
+| Clear Refactor Conditions | Skips refactored story if issue is already “ready” or unclear. | Prevents misleading auto-generated content and focuses effort where it yields ROI. |
 
-## Usage
+> TL;DR: The agent elevates raw issue text into implementable user stories with targeted, non-intrusive assistance—accelerating grooming while preserving maintainers' control.
 
-### As a GitHub Action
+## Workflow Usage
 
-This action is designed to run in a Docker container as part of your GitHub workflow. It requires configuration of environment variables for GitHub and Azure OpenAI access.
+The action runs inside a Docker container. Azure OpenAI credentials are required for both `issues` and `issue_comment` events.
 
-#### Example Workflow
+### Example Workflow
 
 ```yaml
 name: AI Issue Enhancer
@@ -32,127 +38,130 @@ on:
 jobs:
   enhance:
     runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      contents: read
     steps:
-      - name: Run TPM Agent
-        uses: mattdot/tpmagent@v1
+      - uses: actions/checkout@v4
+      - name: Run Repo Agent
+        uses: mattdot/repoagent@v1 # Adjust if published under a different slug/tag
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          github_repository: ${{ github.repository }}
           github_event_name: ${{ github.event_name }}
           github_issue_id: ${{ github.event.issue.number }}
-          check_all: false
+          # github_issue_comment_id: ${{ github.event.comment.id }} # Only for issue_comment events
           azure_openai_api_key: ${{ secrets.AZURE_OPENAI_API_KEY }}
           azure_openai_target_uri: ${{ secrets.AZURE_OPENAI_TARGET_URI }}
-          github_issue_comment_id: ${{ github.event.comment.id }}
+          check_all: false
 ```
 
-### Local Development
-
-1. Clone the repo.
-
-2. Install dependencies:
-
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-3. Run/test scripts in `src/` as needed.
-
-### Local Testing with Docker
-
-You can test the action locally by running the Docker container directly. Example:
+## Local Development
 
 ```bash
-docker build -t tpmagent .
-docker run --rm \
-  -e INPUT_GITHUB_TOKEN=your_github_token \
-  -e INPUT_GITHUB_REPOSITORY=owner/repo \
-  -e INPUT_GITHUB_EVENT_NAME=issues \
-  -e INPUT_GITHUB_ISSUE_ID=123 \
-  -e INPUT_AZURE_OPENAI_API_KEY=your_openai_key \
-  -e INPUT_AZURE_OPENAI_TARGET_URI=your_openai_target_uri \
-  tpmagent
+pip install -r requirements.txt
 ```
 
-Adjust the environment variables as needed for your test scenario. For `issue_comment` events, also set `INPUT_GITHUB_ISSUE_COMMENT_ID`.
+Run individual modules (e.g. parsing) as needed from `src/`.
+
+## Local Testing with Docker
+
+Issue event simulation:
+
+```bash
+docker build -t repoagent .
+docker run --rm \
+  -e INPUT_GITHUB_EVENT_NAME=issues \
+  -e INPUT_GITHUB_ISSUE_ID=123 \
+  -e INPUT_GITHUB_TOKEN=ghp_xxx \
+  -e INPUT_AZURE_OPENAI_API_KEY=xxx \
+  -e INPUT_AZURE_OPENAI_TARGET_URI=https://<resource>.openai.azure.com/openai/deployments/<deployment>/chat/completions?api-version=2024-XX-XX \
+  -e GITHUB_REPOSITORY=owner/repo \
+  repoagent
+```
+
+Issue comment event simulation (adds comment id):
+
+```bash
+docker run --rm \
+  -e INPUT_GITHUB_EVENT_NAME=issue_comment \
+  -e INPUT_GITHUB_ISSUE_ID=123 \
+  -e INPUT_GITHUB_ISSUE_COMMENT_ID=456 \
+  -e INPUT_GITHUB_TOKEN=ghp_xxx \
+  -e INPUT_AZURE_OPENAI_API_KEY=xxx \
+  -e INPUT_AZURE_OPENAI_TARGET_URI=https://<resource>.openai.azure.com/... \
+  -e GITHUB_REPOSITORY=owner/repo \
+  repoagent
+```
+
+`GITHUB_REPOSITORY` is read from the environment (no explicit action input required at runtime).
 
 ## File Structure
 
-- `src/main.py` - Entry point, event handling, AI integration
-- `src/github_utils.py` - GitHub API helpers
-- `src/openai_utils.py` - OpenAI/Semantic Kernel helpers
-- `src/response_models.py` - Markdown parsing/generation
-- `src/prompts.py` - Prompt construction
-- `action.yml` - GitHub Action metadata
-- `requirements.txt` - Python dependencies
-- `.github/workflows/` - Example workflows
+- `src/main.py` – Entry point, event flow
+- `src/github_utils.py` – GitHub API helpers & disable marker logic
+- `src/openai_utils.py` – Azure OpenAI / Semantic Kernel orchestration
+- `src/response_models.py` – JSON ↔ markdown parsing & serialization
+- `src/prompts.py` – Prompt construction
+- `evaluations/` – Offline evaluation harness (Azure AI evaluators)
+- `action.yml` – Action metadata / inputs
+- `requirements.txt` – Runtime dependencies
 
 ## Inputs
 
-### Required for All Events
+All action inputs map to environment variables `INPUT_<NAME>` automatically. Azure OpenAI credentials are needed for both supported events.
 
-| Name                | Description                                            | Required | Example                       |
-| ------------------- | ------------------------------------------------------ | -------- | ----------------------------- |
-| `github_token`      | GitHub token for API access                            | Yes      | `${{ secrets.GITHUB_TOKEN }}` |
-| `github_repository` | Repository in `owner/repo` format                      | Yes      | `octocat/Hello-World`         |
-| `github_event_name` | Name of the GitHub event                               | Yes      | `issues` or `issue_comment`   |
-| `github_issue_id`   | ID of the GitHub issue to process                      | Yes      | `123`                         |
-| `check_all`         | If true, checks all issues (overrides label filtering) | No       | `true` or `false`             |
+| Input Name | Required | Events | Description |
+| ---------- | -------- | ------ | ----------- |
+| `github_event_name` | Yes | all | Event name (`issues` or `issue_comment`) |
+| `github_issue_id` | Yes | all | Issue number to process |
+| `github_issue_comment_id` | No (Yes for `issue_comment`) | issue_comment | Comment id that triggered the run |
+| `github_token` | Yes | all | Token with `issues:write` permission |
+| `azure_openai_api_key` | Yes | all | Azure OpenAI API key |
+| `azure_openai_target_uri` | Yes | all | Full chat completions endpoint URL |
+| `check_all` | No | issues | (Reserved) future bulk processing flag |
+| `repository` | No | all | (Unused) repository is taken from `GITHUB_REPOSITORY` env |
 
-### Additional Required for `issues` Event
+Notes:
+1. `repository` is currently not read by the code; the runtime uses the standard `GITHUB_REPOSITORY` environment variable.
+2. `github_issue_comment_id` is only needed when the triggering event is `issue_comment`.
 
-| Name                      | Description                             | Required | Example                                  |
-| ------------------------- | --------------------------------------- | -------- | ---------------------------------------- |
-| `azure_openai_api_key`    | Azure OpenAI API key                    | Yes      | `${{ secrets.AZURE_OPENAI_KEY }}`        |
-| `azure_openai_target_uri` | Azure OpenAI target URI (full endpoint) | Yes      | `${{ secrets.AZURE_OPENAI_TARGET_URI }}` |
+### Refactored Story Conditions
 
-### Additional Required for `issue_comment` Event
+A `refactored_story` section is included only when:
 
-| Name                      | Description                               | Required | Example |
-| ------------------------- | ----------------------------------------- | -------- | ------- |
-| `github_issue_comment_id` | ID of the GitHub issue comment to process | Yes      | `456`   |
+- `ready_to_work` is false AND
+- `base_story_not_clear` is false
 
-See `action.yml` for a full list and details.
+If the story is already good (`ready_to_work = true`) or unclear (`base_story_not_clear = true`), no refactored story is generated (an explanatory note is shown for the unclear case).
 
-## Configuration
+## Supported Workflow Events
 
-- Requires Azure OpenAI credentials and GitHub token as inputs or environment variables.
-- See `action.yml` for all supported inputs.
+- `issues` – Evaluate newly opened / edited issues.
+- `issue_comment` – Execute commands (`/apply`, `/review`, etc.).
 
-## Supported Workflow Events and Triggers
+## Commands
 
-This action supports the following GitHub workflow events:
+| Command | Purpose | Notes |
+| ------- | ------- | ----- |
+| `/review` | Run (or re-run) an evaluation and post results. | Use iteratively as issue evolves. |
+| `/apply` | Apply latest AI-refactored title/body/labels. | Only works if a prior evaluation comment exists. |
+| `/usage` | Show help / command list. | Always available. |
+| `/disable` | Stop automatic AI evaluations for this issue. | Adds a hidden HTML marker. Remove the marker & comment `/review` to re-enable. |
 
-- **issues**
-  - Triggered on issue events such as `opened` and `edited`.
-  - Used to analyze and enhance new or updated issues.
-- **issue_comment**
-  - Triggered on issue comment events such as `created`.
-  - Used to apply enhancements when a user comments with a specific command (e.g., `/apply`)
+Disable marker used: `<!-- agent:disabled -->`.
 
-Example configuration in your workflow:
+## Evaluations Harness
 
-```yaml
-on:
-  issues:
-    types: [opened, edited]
-  issue_comment:
-    types: [created]
+The `evaluations/` folder provides `evaluator.py` leveraging Azure AI Foundry evaluators (Task Adherence, Intent Resolution, Response Completeness). See `evaluations/README.md` for environment variable requirements and execution steps:
+
+```bash
+cd evaluations
+python evaluator.py
 ```
 
-See the [GitHub Actions documentation](https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows) for more details on workflow events and triggers.
+## Security / Permissions
 
-## Supported Commands
-
-### 🚀 Available Commands
-
-| Command     | Functionality                                                | Notes                                                                 |
-|-------------|--------------------------------------------------------------|-----------------------------------------------------------------------|
-| `/apply`    | Applies the latest AI-enhanced title, body, and labels to the GitHub issue. | Must be used as a GitHub comment on an issue with a valid enhancement suggestion. |
-| `/review`   | Triggers a new AI review of the issue and posts the updated evaluation as a comment. | Does not update the issue directly; useful for iterative refinement or rechecks. |
-| `/usage`    | Displays a list of available bot commands with descriptions. | Use this to discover what commands the bot supports. |
-| `/disable` | Disables automatic AI reviews for this issue. | Useful to pause further updates once the issue is finalized. Use `/review` to trigger new reviews manually. |
-
+Grant the workflow only the permissions it needs (minimum: `issues: write`, `contents: read`). Secrets required: Azure OpenAI key and target URI.
 
 ## Contributing
 
@@ -160,4 +169,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ## License
 
-MIT License. See [LICENSE](LICENSE).
+MIT – see [LICENSE](LICENSE).
