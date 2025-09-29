@@ -1,8 +1,8 @@
-# TPM Agent: AI-Powered GitHub Issue Enhancer
+# AI-Powered GitHub Issue Enhancer
 
 ## Overview
 
-TPM Agent is a GitHub Action that uses AI to analyze, evaluate, and improve GitHub issues, transforming them into high-quality user stories ready for engineering work. It leverages Azure OpenAI and Semantic Kernel to provide actionable feedback, suggest labels, and refactor stories for clarity, completeness, and testability.
+A GitHub Action that uses AI to analyze, evaluate, and improve GitHub issues, transforming them into high-quality user stories ready for engineering work. It leverages Azure OpenAI and Semantic Kernel to provide actionable feedback, suggest labels, and refactor stories for clarity, completeness, and testability.
 
 ## Features
 
