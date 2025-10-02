@@ -27,6 +27,8 @@ The action runs inside a Docker container. Azure OpenAI credentials are required
 
 ### Example Workflow
 
+The action automatically uses GitHub's built-in environment variables:
+
 ```yaml
 name: AI Issue Enhancer
 on:
@@ -46,13 +48,8 @@ jobs:
       - name: Run Repo Agent
         uses: mattdot/repoagent@v1
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          github_event_name: ${{ github.event_name }}
-          github_issue_id: ${{ github.event.issue.number }}
-          # github_issue_comment_id: ${{ github.event.comment.id }} # Only for issue_comment events
           azure_openai_api_key: ${{ secrets.AZURE_OPENAI_API_KEY }}
           azure_openai_target_uri: ${{ secrets.AZURE_OPENAI_TARGET_URI }}
-          check_all: false
 ```
 
 ## Local Development
@@ -65,35 +62,55 @@ Run individual modules (e.g. parsing) as needed from `src/`.
 
 ## Local Testing with Docker
 
-Issue event simulation:
+Issue event simulation using GitHub environment variables:
 
 ```bash
 docker build -t repoagent .
+
+# Create a GitHub event payload file
+cat > /tmp/event.json << 'EOF'
+{
+  "issue": {
+    "number": 123
+  }
+}
+EOF
+
 docker run --rm \
-  -e INPUT_GITHUB_EVENT_NAME=issues \
-  -e INPUT_GITHUB_ISSUE_ID=123 \
-  -e INPUT_GITHUB_TOKEN=ghp_xxx \
+  -e GITHUB_EVENT_NAME=issues \
+  -e GITHUB_EVENT_PATH=/tmp/event.json \
+  -e GITHUB_TOKEN=ghp_xxx \
+  -e GITHUB_REPOSITORY=owner/repo \
   -e INPUT_AZURE_OPENAI_API_KEY=xxx \
   -e INPUT_AZURE_OPENAI_TARGET_URI=https://<resource>.openai.azure.com/openai/deployments/<deployment>/chat/completions?api-version=2024-XX-XX \
-  -e GITHUB_REPOSITORY=owner/repo \
+  -v /tmp/event.json:/tmp/event.json:ro \
   repoagent
 ```
 
-Issue comment event simulation (adds comment id):
+Issue comment event simulation (with comment id):
 
 ```bash
+cat > /tmp/event.json << 'EOF'
+{
+  "issue": {
+    "number": 123
+  },
+  "comment": {
+    "id": 456
+  }
+}
+EOF
+
 docker run --rm \
-  -e INPUT_GITHUB_EVENT_NAME=issue_comment \
-  -e INPUT_GITHUB_ISSUE_ID=123 \
-  -e INPUT_GITHUB_ISSUE_COMMENT_ID=456 \
-  -e INPUT_GITHUB_TOKEN=ghp_xxx \
+  -e GITHUB_EVENT_NAME=issue_comment \
+  -e GITHUB_EVENT_PATH=/tmp/event.json \
+  -e GITHUB_TOKEN=ghp_xxx \
+  -e GITHUB_REPOSITORY=owner/repo \
   -e INPUT_AZURE_OPENAI_API_KEY=xxx \
   -e INPUT_AZURE_OPENAI_TARGET_URI=https://<resource>.openai.azure.com/... \
-  -e GITHUB_REPOSITORY=owner/repo \
+  -v /tmp/event.json:/tmp/event.json:ro \
   repoagent
 ```
-
-`GITHUB_REPOSITORY` is read from the environment (no explicit action input required at runtime).
 
 ## File Structure
 
@@ -108,22 +125,17 @@ docker run --rm \
 
 ## Inputs
 
-All action inputs map to environment variables `INPUT_<NAME>` automatically. Azure OpenAI credentials are needed for both supported events.
+All action inputs map to environment variables `INPUT_<NAME>` automatically. GitHub context is automatically extracted from standard GitHub environment variables. Azure OpenAI credentials are required for both supported events.
 
-| Input Name | Required | Events | Description |
-| ---------- | -------- | ------ | ----------- |
-| `github_event_name` | Yes | all | Event name (`issues` or `issue_comment`) |
-| `github_issue_id` | Yes | all | Issue number to process |
-| `github_issue_comment_id` | No (Yes for `issue_comment`) | issue_comment | Comment id that triggered the run |
-| `github_token` | Yes | all | Token with `issues:write` permission |
-| `azure_openai_api_key` | Yes | all | Azure OpenAI API key |
-| `azure_openai_target_uri` | Yes | all | Full chat completions endpoint URL |
-| `check_all` | No | issues | (Reserved) future bulk processing flag |
-| `repository` | No | all | (Unused) repository is taken from `GITHUB_REPOSITORY` env |
+| Input Name | Required | Default | Events | Description |
+| ---------- | -------- | ------- | ------ | ----------- |
+| `github_token` | No | `${{ github.token }}` | all | Token with `issues:write` permission |
+| `azure_openai_api_key` | Yes | - | all | Azure OpenAI API key |
+| `azure_openai_target_uri` | Yes | - | all | Full chat completions endpoint URL |
 
 Notes:
-1. `repository` is currently not read by the code; the runtime uses the standard `GITHUB_REPOSITORY` environment variable.
-2. `github_issue_comment_id` is only needed when the triggering event is `issue_comment`.
+1. GitHub context (`event_name`, `issue_id`, `issue_comment_id`, `repository`) is automatically extracted from GitHub's standard environment variables (`GITHUB_EVENT_NAME`, `GITHUB_EVENT_PATH`, `GITHUB_TOKEN`, `GITHUB_REPOSITORY`).
+2. These values are not configurable through action inputs - they are always read from the GitHub Actions environment.
 
 ### Refactored Story Conditions
 

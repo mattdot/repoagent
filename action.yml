@@ -11,30 +11,16 @@ runs:
   image: 'Dockerfile'
 
 inputs:
-  check_all:
-    description: 'Whether to check all issues (true/false)'
-    required: false
-  github_event_name:
-    description: 'Name of the GitHub event that triggered the action'
-    required: true
-  github_issue_id:
-    description: 'Unique ID of the GitHub issue'
-    required: true
   github_token:
-    description: 'GitHub token with repo access'
-    required: true
-  github_issue_comment_id:
-    description: 'GitHub comment id'
+    description: 'GitHub token with repo access (defaults to github.token)'
     required: false
+    default: ${{ github.token }}
   azure_openai_target_uri:
     description: 'Azure OpenAI target URI'
     required: true
   azure_openai_api_key:
     description: 'API key for Azure OpenAI'
     required: true
-  repository:
-    description: 'GitHub repository name (owner/repo)'
-    required: false
 
 outputs:
   status:

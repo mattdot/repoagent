@@ -16,16 +16,27 @@ pip install -r requirements-lint.txt
 ```
 
 ## ▶️ Running Locally
-Issue evaluation (simulate `issues` event):
+Issue evaluation (simulate `issues` event) using GitHub environment variables:
 ```bash
 docker build -t repoagent .
+
+# Create a GitHub event payload file
+cat > /tmp/event.json << 'EOF'
+{
+  "issue": {
+    "number": 123
+  }
+}
+EOF
+
 docker run --rm \
-  -e INPUT_GITHUB_EVENT_NAME=issues \
-  -e INPUT_GITHUB_ISSUE_ID=123 \
-  -e INPUT_GITHUB_TOKEN=ghp_xxx \
+  -e GITHUB_EVENT_NAME=issues \
+  -e GITHUB_EVENT_PATH=/tmp/event.json \
+  -e GITHUB_TOKEN=ghp_xxx \
+  -e GITHUB_REPOSITORY=owner/repo \
   -e INPUT_AZURE_OPENAI_API_KEY=xxx \
   -e INPUT_AZURE_OPENAI_TARGET_URI=https://<resource>.openai.azure.com/... \
-  -e GITHUB_REPOSITORY=owner/repo \
+  -v /tmp/event.json:/tmp/event.json:ro \
   repoagent
 ```
 
