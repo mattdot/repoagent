@@ -44,7 +44,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Run Repo Agent
-        uses: mattdot/repoagent@v1 # Adjust if published under a different slug/tag
+        uses: mattdot/repoagent@v1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           github_event_name: ${{ github.event_name }}
