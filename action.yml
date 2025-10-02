@@ -1,6 +1,6 @@
-name: 'TPM Repo Agent'
+name: 'Issue Enhancer Agent'
 description: 'An AI-powered GitHub Action that enhances issue descriptions, comments, and labels using Semantic Kernel and Azure OpenAI.'
-author: 'Team Sparkify'
+author: 'mattdot'
 
 branding:
   icon: 'shield'
@@ -25,7 +25,7 @@ inputs:
     required: true
   github_issue_comment_id:
     description: 'GitHub comment id'
-    required: true
+    required: false
   azure_openai_target_uri:
     description: 'Azure OpenAI target URI'
     required: true
@@ -34,7 +34,7 @@ inputs:
     required: true
   repository:
     description: 'GitHub repository name (owner/repo)'
-    required: true
+    required: false
 
 outputs:
   status:
