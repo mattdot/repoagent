@@ -58,21 +58,24 @@ jobs:
       - name: Run TPM Agent
         env:
           INPUT_CHECK_ALL: 'True'
-          INPUT_GITHUB_EVENT_NAME: ${{ inputs.github_event_name || github.event_name }}
-          INPUT_GITHUB_ISSUE_ID: ${{ inputs.github_issue_id || github.event.issue.number }}
-          INPUT_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          INPUT_GITHUB_ISSUE_COMMENT_ID: ${{ inputs.github_comment_id || github.event.comment.id }}
+          # GitHub environment variables are now automatically used
+          # Override only if workflow inputs are provided
+          INPUT_GITHUB_EVENT_NAME: ${{ inputs.github_event_name }}
+          INPUT_GITHUB_ISSUE_ID: ${{ inputs.github_issue_id }}
+          INPUT_GITHUB_ISSUE_COMMENT_ID: ${{ inputs.github_comment_id }}
           INPUT_AZURE_OPENAI_TARGET_URI: ${{ secrets.AZURE_OPENAI_TARGET_URI }}
           INPUT_AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
         run: |
           docker run --rm \
             -e INPUT_CHECK_ALL \
             -e INPUT_GITHUB_EVENT_NAME \
             -e INPUT_GITHUB_ISSUE_ID \
-            -e INPUT_GITHUB_TOKEN \
             -e INPUT_GITHUB_ISSUE_COMMENT_ID \
             -e INPUT_AZURE_OPENAI_TARGET_URI \
             -e INPUT_AZURE_OPENAI_API_KEY \
+            -e GITHUB_EVENT_NAME \
+            -e GITHUB_EVENT_PATH \
+            -e GITHUB_TOKEN \
             -e GITHUB_REPOSITORY \
+            -v ${{ github.event_path }}:${{ github.event_path }}:ro \
             tpm-agent
