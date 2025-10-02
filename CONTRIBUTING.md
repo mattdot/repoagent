@@ -40,18 +40,6 @@ docker run --rm \
   repoagent
 ```
 
-Or use the `INPUT_*` environment variables for backward compatibility:
-```bash
-docker run --rm \
-  -e INPUT_GITHUB_EVENT_NAME=issues \
-  -e INPUT_GITHUB_ISSUE_ID=123 \
-  -e INPUT_GITHUB_TOKEN=ghp_xxx \
-  -e INPUT_AZURE_OPENAI_API_KEY=xxx \
-  -e INPUT_AZURE_OPENAI_TARGET_URI=https://<resource>.openai.azure.com/... \
-  -e GITHUB_REPOSITORY=owner/repo \
-  repoagent
-```
-
 ## ✅ Contribution Workflow
 1. Fork & branch (`feat/<short-desc>` or `fix/<short-desc>`).
 2. Make focused changes (keep PRs small & purposeful).

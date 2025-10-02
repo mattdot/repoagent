@@ -27,7 +27,7 @@ The action runs inside a Docker container. Azure OpenAI credentials are required
 
 ### Example Workflow
 
-The action can now automatically use GitHub's built-in environment variables, making most inputs optional:
+The action automatically uses GitHub's built-in environment variables:
 
 ```yaml
 name: AI Issue Enhancer
@@ -48,25 +48,6 @@ jobs:
       - name: Run Repo Agent
         uses: mattdot/repoagent@v1
         with:
-          # GitHub context automatically provided via environment variables
-          # github_token defaults to ${{ github.token }}
-          # github_event_name defaults to ${{ github.event_name }}
-          # github_issue_id defaults to ${{ github.event.issue.number }}
-          # github_issue_comment_id defaults to ${{ github.event.comment.id }}
-          azure_openai_api_key: ${{ secrets.AZURE_OPENAI_API_KEY }}
-          azure_openai_target_uri: ${{ secrets.AZURE_OPENAI_TARGET_URI }}
-```
-
-For explicit control, you can still provide the inputs:
-
-```yaml
-      - name: Run Repo Agent
-        uses: mattdot/repoagent@v1
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          github_event_name: ${{ github.event_name }}
-          github_issue_id: ${{ github.event.issue.number }}
-          # github_issue_comment_id: ${{ github.event.comment.id }} # Only for issue_comment events
           azure_openai_api_key: ${{ secrets.AZURE_OPENAI_API_KEY }}
           azure_openai_target_uri: ${{ secrets.AZURE_OPENAI_TARGET_URI }}
 ```
@@ -131,19 +112,6 @@ docker run --rm \
   repoagent
 ```
 
-For backward compatibility, you can still use the `INPUT_*` environment variables:
-
-```bash
-docker run --rm \
-  -e INPUT_GITHUB_EVENT_NAME=issues \
-  -e INPUT_GITHUB_ISSUE_ID=123 \
-  -e INPUT_GITHUB_TOKEN=ghp_xxx \
-  -e INPUT_AZURE_OPENAI_API_KEY=xxx \
-  -e INPUT_AZURE_OPENAI_TARGET_URI=https://<resource>.openai.azure.com/openai/deployments/<deployment>/chat/completions?api-version=2024-XX-XX \
-  -e GITHUB_REPOSITORY=owner/repo \
-  repoagent
-```
-
 ## File Structure
 
 - `src/main.py` – Entry point, event flow
@@ -157,23 +125,17 @@ docker run --rm \
 
 ## Inputs
 
-All action inputs map to environment variables `INPUT_<NAME>` automatically. Most GitHub-related inputs now default to standard GitHub environment variables. Azure OpenAI credentials are required for both supported events.
+All action inputs map to environment variables `INPUT_<NAME>` automatically. GitHub context is automatically extracted from standard GitHub environment variables. Azure OpenAI credentials are required for both supported events.
 
 | Input Name | Required | Default | Events | Description |
 | ---------- | -------- | ------- | ------ | ----------- |
-| `github_event_name` | No | `${{ github.event_name }}` | all | Event name (`issues` or `issue_comment`) |
-| `github_issue_id` | No | `${{ github.event.issue.number }}` | all | Issue number to process |
-| `github_issue_comment_id` | No | `${{ github.event.comment.id }}` | issue_comment | Comment id that triggered the run |
 | `github_token` | No | `${{ github.token }}` | all | Token with `issues:write` permission |
 | `azure_openai_api_key` | Yes | - | all | Azure OpenAI API key |
 | `azure_openai_target_uri` | Yes | - | all | Full chat completions endpoint URL |
-| `check_all` | No | `false` | issues | (Reserved) future bulk processing flag |
-| `repository` | No | `${{ github.repository }}` | all | Repository is taken from `GITHUB_REPOSITORY` env |
 
 Notes:
-1. GitHub-related inputs (`github_event_name`, `github_issue_id`, `github_issue_comment_id`, `github_token`) are now optional and automatically extracted from GitHub's environment variables (`GITHUB_EVENT_NAME`, `GITHUB_EVENT_PATH`, `GITHUB_TOKEN`).
-2. Explicitly provided inputs take priority over environment variables for backward compatibility.
-3. The `repository` input is deprecated; the action always uses the `GITHUB_REPOSITORY` environment variable.
+1. GitHub context (`event_name`, `issue_id`, `issue_comment_id`, `repository`) is automatically extracted from GitHub's standard environment variables (`GITHUB_EVENT_NAME`, `GITHUB_EVENT_PATH`, `GITHUB_TOKEN`, `GITHUB_REPOSITORY`).
+2. These values are not configurable through action inputs - they are always read from the GitHub Actions environment.
 
 ### Refactored Story Conditions
 
