@@ -2,7 +2,6 @@ import asyncio
 import sys
 
 # Third-party imports
-from github.Issue import Issue
 from semantic_kernel import Kernel
 
 from comment_commands import CommentCommand, get_command_usage_markdown
@@ -20,21 +19,29 @@ from github_utils import (
     is_agent_disabled,
     update_github_issue,
 )
+from graphql_client import IssueSnapshot
 from openai_utils import initialize_kernel, run_completion
 from prompts import build_user_story_eval_prompt
 from response_models import UserStoryEvalResponse
 
 
 async def handle_github_issues_event(
-    issue: Issue, kernel: Kernel, existing_labels: list[str], is_manual_trigger: bool = False
+    issue: IssueSnapshot,
+    kernel: Kernel,
+    existing_labels: list[str],
+    token: str,
+    repository: str,
+    is_manual_trigger: bool = False,
 ) -> None:
     """
     Generate an AI-enhanced evaluation for a GitHub issue and post it as a comment if not disabled.
 
     Args:
-        issue (Issue): The GitHub issue to process.
+        issue (IssueSnapshot): The GitHub issue snapshot to process.
         kernel (Kernel): The initialized AI kernel for generating responses.
         existing_labels (list): List of existing labels in the repository.
+        token (str): GitHub access token.
+        repository (str): Repository in 'owner/name' format.
         is_manual_trigger (bool): Whether this is a manual review request; defaults to False.
     """
     if not is_manual_trigger and is_agent_disabled(issue):
@@ -46,7 +53,7 @@ async def handle_github_issues_event(
         response_text = await run_completion(kernel, messages)
         response_markdown = UserStoryEvalResponse.from_text(response_text).to_markdown()
 
-        create_github_issue_comment(issue, response_markdown)
+        create_github_issue_comment(issue, response_markdown, token, repository)
         print(f"AI Response for Issue {issue.number} (Markdown):\n\n{response_markdown}")
     except Exception as e:
         print(f"Error running Azure OpenAI completion: {e}", file=sys.stderr)
@@ -54,14 +61,23 @@ async def handle_github_issues_event(
 
 
 async def handle_github_comment_event(
-    issue: Issue, issue_comment_id: int, kernel: Kernel, existing_labels: list[str]
+    issue: IssueSnapshot,
+    issue_comment_id: int,
+    kernel: Kernel,
+    existing_labels: list[str],
+    token: str,
+    repository: str,
 ) -> None:
     """
     Apply AI-suggested enhancements to a GitHub issue, or trigger a re-review if requested in a comment.
 
     Args:
-        issue (Issue): The GitHub issue to update.
+        issue (IssueSnapshot): The GitHub issue snapshot to update.
         issue_comment_id (int): The ID of the comment triggering the enhancement or review.
+        kernel (Kernel): The initialized AI kernel for generating responses.
+        existing_labels (list): List of existing labels in the repository.
+        token (str): GitHub access token.
+        repository (str): Repository in 'owner/name' format.
     """
     comment = get_github_comment(issue, issue_comment_id)
     comment_body = comment.body.strip().lower()
@@ -78,20 +94,22 @@ async def handle_github_comment_event(
             title=user_story_eval.refactored.title,
             body=user_story_eval.refactored.body_markdown(),
             labels=user_story_eval.labels,
+            token=token,
+            repository=repository,
         )
 
         quoted_body = "\n".join([f"> {line}" for line in user_story_eval.to_markdown().strip().splitlines()])
         confirmation_comment = f"✅ Applied enhancements based on the following comment:\n\n" f"{quoted_body}"
 
-        create_github_issue_comment(issue, confirmation_comment)
+        create_github_issue_comment(issue, confirmation_comment, token, repository)
 
     elif CommentCommand.REVIEW.value in comment_body:
         print(f"Triggering manual review for issue {issue.number}...")
 
-        await handle_github_issues_event(issue, kernel, existing_labels, is_manual_trigger=True)
+        await handle_github_issues_event(issue, kernel, existing_labels, token, repository, is_manual_trigger=True)
     elif CommentCommand.USAGE.value in comment_body:
         usage_md = get_command_usage_markdown()
-        create_github_issue_comment(issue, f"### 🤖 Available Commands\n\n{usage_md}")
+        create_github_issue_comment(issue, f"### 🤖 Available Commands\n\n{usage_md}", token, repository)
         print(f"Posted usage information for issue {issue.number}.")
     elif CommentCommand.DISABLE.value in comment_body:
         create_github_issue_comment(
@@ -101,6 +119,8 @@ async def handle_github_comment_event(
                 f"Comment `{CommentCommand.REVIEW.value}` to manually trigger future evaluations."
                 f"{DISABLED_MARKER}"
             ),
+            token,
+            repository,
         )
     else:
         print(f"Comment {issue_comment_id} does not require processing.")
@@ -133,9 +153,16 @@ async def main() -> None:
     )
 
     event_handlers = {
-        GithubEvent.ISSUE: lambda: handle_github_issues_event(github_issue, kernel, existing_labels),
+        GithubEvent.ISSUE: lambda: handle_github_issues_event(
+            github_issue, kernel, existing_labels, config.github.token, config.github.repository
+        ),
         GithubEvent.ISSUE_COMMENT: lambda: handle_github_comment_event(
-            github_issue, config.github.issue_comment_id, kernel, existing_labels
+            github_issue,
+            config.github.issue_comment_id,
+            kernel,
+            existing_labels,
+            config.github.token,
+            config.github.repository,
         ),
     }
 
