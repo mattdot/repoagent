@@ -5,7 +5,7 @@ Centralized configuration and environment variable handling for repoagent.
 from typing import Any, Optional
 
 from github_utils import GithubEvent
-from utils import get_env_var
+from utils import get_env_var, get_github_event_payload
 
 
 class GitHubConfig:
@@ -16,23 +16,57 @@ class GitHubConfig:
     """
 
     def __init__(self):
-        event_name_str: str = get_env_var("INPUT_GITHUB_EVENT_NAME")
+        # Get event name from INPUT_GITHUB_EVENT_NAME or fallback to GITHUB_EVENT_NAME
+        event_name_str: str = get_env_var("INPUT_GITHUB_EVENT_NAME", required=False)
+        if not event_name_str:
+            event_name_str = get_env_var("GITHUB_EVENT_NAME", required=True)
 
         try:
             self.event_name: GithubEvent = GithubEvent(event_name_str)
         except ValueError:
             raise ValueError(f"Invalid event name: {event_name_str}. Must be one of {[e.value for e in GithubEvent]}")
 
-        self.issue_id: int = get_env_var("INPUT_GITHUB_ISSUE_ID", cast_func=int)
-        self.token: str = get_env_var("INPUT_GITHUB_TOKEN")
+        # Get event payload for extracting issue and comment IDs
+        event_payload = get_github_event_payload()
+
+        # Get issue ID from INPUT or event payload
+        issue_id_str = get_env_var("INPUT_GITHUB_ISSUE_ID", required=False)
+        if issue_id_str:
+            self.issue_id: int = int(issue_id_str)
+        elif event_payload and "issue" in event_payload and "number" in event_payload["issue"]:
+            self.issue_id: int = event_payload["issue"]["number"]
+        else:
+            raise ValueError(
+                "Missing required issue ID: set INPUT_GITHUB_ISSUE_ID or "
+                "ensure GITHUB_EVENT_PATH contains issue.number"
+            )
+
+        # Get token from INPUT_GITHUB_TOKEN or fallback to GITHUB_TOKEN
+        self.token: str = get_env_var("INPUT_GITHUB_TOKEN", required=False)
+        if not self.token:
+            self.token = get_env_var("GITHUB_TOKEN", required=True)
+
+        # Repository is already correctly read from GITHUB_REPOSITORY
         self.repository: str = get_env_var("GITHUB_REPOSITORY")
 
+        # Get comment ID from INPUT or event payload
         if self.event_name == GithubEvent.ISSUE_COMMENT:
-            self.issue_comment_id: int = get_env_var("INPUT_GITHUB_ISSUE_COMMENT_ID", cast_func=int)
+            comment_id_str = get_env_var("INPUT_GITHUB_ISSUE_COMMENT_ID", required=False)
+            if comment_id_str:
+                self.issue_comment_id: int = int(comment_id_str)
+            elif event_payload and "comment" in event_payload and "id" in event_payload["comment"]:
+                self.issue_comment_id: int = event_payload["comment"]["id"]
+            else:
+                raise ValueError(
+                    "Missing required comment ID for issue_comment event: set INPUT_GITHUB_ISSUE_COMMENT_ID or "
+                    "ensure GITHUB_EVENT_PATH contains comment.id"
+                )
         else:
-            self.issue_comment_id: Optional[int] = get_env_var(
-                "INPUT_GITHUB_ISSUE_COMMENT_ID", cast_func=int, required=False
-            )
+            comment_id_str = get_env_var("INPUT_GITHUB_ISSUE_COMMENT_ID", required=False)
+            if comment_id_str:
+                self.issue_comment_id: Optional[int] = int(comment_id_str)
+            else:
+                self.issue_comment_id: Optional[int] = None
 
 
 class OpenAIConfig:

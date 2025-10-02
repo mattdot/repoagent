@@ -15,16 +15,17 @@ inputs:
     description: 'Whether to check all issues (true/false)'
     required: false
   github_event_name:
-    description: 'Name of the GitHub event that triggered the action'
-    required: true
+    description: 'Name of the GitHub event that triggered the action (defaults to github.event_name)'
+    required: false
   github_issue_id:
-    description: 'Unique ID of the GitHub issue'
-    required: true
+    description: 'Unique ID of the GitHub issue (defaults to github.event.issue.number)'
+    required: false
   github_token:
-    description: 'GitHub token with repo access'
-    required: true
+    description: 'GitHub token with repo access (defaults to github.token)'
+    required: false
+    default: ${{ github.token }}
   github_issue_comment_id:
-    description: 'GitHub comment id'
+    description: 'GitHub comment id (defaults to github.event.comment.id for issue_comment events)'
     required: false
   azure_openai_target_uri:
     description: 'Azure OpenAI target URI'
@@ -33,7 +34,7 @@ inputs:
     description: 'API key for Azure OpenAI'
     required: true
   repository:
-    description: 'GitHub repository name (owner/repo)'
+    description: 'GitHub repository name (owner/repo) - deprecated, uses GITHUB_REPOSITORY'
     required: false
 
 outputs:

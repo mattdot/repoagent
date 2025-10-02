@@ -1,3 +1,4 @@
+import json
 import os
 from typing import Any, Callable, Optional
 
@@ -34,3 +35,21 @@ def get_env_var(
         except Exception:
             raise ValueError(f"Invalid value for environment variable '{key}': could not cast '{val}'")
     return val
+
+
+def get_github_event_payload() -> dict:
+    """
+    Read and parse the GitHub event payload from GITHUB_EVENT_PATH.
+
+    Returns:
+        dict: The parsed event payload, or an empty dict if not available.
+    """
+    event_path = os.getenv("GITHUB_EVENT_PATH")
+    if not event_path:
+        return {}
+
+    try:
+        with open(event_path, "r") as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
