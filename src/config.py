@@ -31,9 +31,7 @@ class GitHubConfig:
         if event_payload and "issue" in event_payload and "number" in event_payload["issue"]:
             self.issue_id: int = event_payload["issue"]["number"]
         else:
-            raise ValueError(
-                "Missing required issue ID: ensure GITHUB_EVENT_PATH contains issue.number"
-            )
+            raise ValueError("Missing required issue ID: ensure GITHUB_EVENT_PATH contains issue.number")
 
         # Get token from GITHUB_TOKEN
         self.token: str = get_env_var("GITHUB_TOKEN", required=True)
