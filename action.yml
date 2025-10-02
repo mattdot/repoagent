@@ -32,9 +32,6 @@ inputs:
   azure_openai_api_key:
     description: 'API key for Azure OpenAI'
     required: true
-  repository:
-    description: 'GitHub repository name (owner/repo)'
-    required: false
 
 outputs:
   status:

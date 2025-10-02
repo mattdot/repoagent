@@ -119,11 +119,10 @@ All action inputs map to environment variables `INPUT_<NAME>` automatically. Azu
 | `azure_openai_api_key` | Yes | all | Azure OpenAI API key |
 | `azure_openai_target_uri` | Yes | all | Full chat completions endpoint URL |
 | `check_all` | No | issues | (Reserved) future bulk processing flag |
-| `repository` | No | all | (Unused) repository is taken from `GITHUB_REPOSITORY` env |
 
 Notes:
-1. `repository` is currently not read by the code; the runtime uses the standard `GITHUB_REPOSITORY` environment variable.
-2. `github_issue_comment_id` is only needed when the triggering event is `issue_comment`.
+1. `github_issue_comment_id` is only needed when the triggering event is `issue_comment`.
+2. The repository name is automatically provided by the `GITHUB_REPOSITORY` environment variable in GitHub Actions workflows.
 
 ### Refactored Story Conditions
 
